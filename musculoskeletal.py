@@ -1,10 +1,8 @@
-
 import matplotlib.pyplot as plt
 from math import e
 from scipy.integrate import solve_ivp
 
 ### Musculoskeletal Model
-
 
 def soleus_length(theta):
     """
