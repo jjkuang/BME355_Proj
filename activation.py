@@ -1,17 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from math import e
-from scipy.integrate import solve_ivp
+from regression import load_data, get_norm_emg
 
-"""### Activation for Hill Type
-
-- Frequency
-- Positive Pulse Width and Amplitude
-- Negative Pulse Width and Amplitude
-- Non-linearility coefficient
-- Pulse Amplitude
-- Fatigue
-"""
+gait_data = load_data('./gait_data.csv')
+gait_data = np.array(gait_data)
+gait_data_regress = get_norm_emg(gait_data)
 
 class Activation:
   '''
@@ -33,29 +27,33 @@ class Activation:
 
     period = (1 * 1000)//frequency # ms
 
-    on = amp * np.ones(int((period)* duty_cycle/100))
+    duty_on = int((period)* duty_cycle/100)
+    on = amp * np.ones(duty_on)
 
     off = np.zeros(period - len(on))
     
     result = np.concatenate((on, off))
 
     temp = result
-    for _ in range(frequency*length - 1):
+    for _ in range(100 - 1):
       result = np.concatenate((result, temp))
     
-    
-    plt.plot(result)
+    x = np.linspace(0, 100, len(result))
+    sin = gait_data_regress.eval(x)
 
-    print(len(result))
-    # activation_signal = e**(non_linearity*result)-1/(e**non_linearity-1)
-    # plt.plot(activation_signal)
-    # return activation_signal
+    result = np.multiply(result, sin)
+    plt.plot(x,result)
+    plt.show()
+    activation_signal = (e**(non_linearity*result)-1)/(e**non_linearity-1)
+    plt.plot(x,activation_signal)
+    plt.show()
+    return activation_signal
   
   # def get_amp(self, t):
 
   
   # def get_fatigue(self, signal, width):
 
-length, frequency, duty_cycle, amp, non_linearity = 2, 10, 50, 1, -2
+length, frequency, duty_cycle, amp, non_linearity = 1, 10, 50, 1, -1
 a = Activation(length, frequency, duty_cycle, amp, non_linearity)
 a.get_activation_signal(length, frequency, duty_cycle, amp, non_linearity)
