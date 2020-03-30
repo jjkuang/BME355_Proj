@@ -397,7 +397,7 @@ if __name__ == '__main__':
     total_length = resting_muscle_length + resting_tendon_length
 
 
-    gait_data = load_data('./gait_data.csv')
+    gait_data = load_data('./ta_vs_gait.csv')
     gait_data = np.array(gait_data)
     gait_data_regress = get_norm_emg(gait_data)
     

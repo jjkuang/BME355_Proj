@@ -7,17 +7,61 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from musculoskeletal import HillTypeMuscle, get_velocity
+from activation import Activation
+from regression import load_data, get_norm_emg, get_norm_general
+
+# Get activation signal a
+gait_data = load_data('./ta_vs_gait.csv')
+gait_data = np.array(gait_data)
+gait_data_regress = get_norm_emg(gait_data)
+length, frequency, duty_cycle, scaling, non_linearity = 1,20, 0.99, 1, -1
+a = Activation(length, frequency, duty_cycle, scaling, non_linearity)
+a.get_activation_signal(gait_data_regress)
+
+# Get ankle angle
+ankle_data = load_data('./ankle_vs_gait.csv')
+ankle_data = np.array(ankle_data)
+ankle_data = get_norm_general(ankle_data)
+
+# Get knee angle
+knee_data = load_data('./knee_vs_gait.csv')
+knee_data = np.array(knee_data)
+knee_data = get_norm_general(knee_data)
+
+# Get hip angle
+hip_data = load_data('./hip_vs_gait.csv')
+hip_data = np.array(hip_data)
+hip_data = get_norm_general(hip_data)
+
+
+def get_global(theta, x, y, t):
+    
+    ankle_angle = theta - np.pi
+    rotation_ankle = [[np.cos(ankle_angle), -np.sin(ankle_angle)], [np.sin(ankle_angle), np.cos(ankle_angle)]]
+    
+    rel_knee = np.dot(rotation_ankle, [x, y])
+    rel_knee = rel_knee + [0.414024, 0]
+    
+    knee_angle = knee_data.eval(t*100)[0]
+    rotation_knee = [[np.cos(knee_angle), -np.sin(knee_angle)], [np.sin(knee_angle), np.cos(knee_angle)]]
+    
+    rel_thigh = np.dot(rotation_knee, rel_knee)
+    rel_thigh = rel_thigh + [0.42672, 0]
+    
+    thigh_angle = hip_data.eval(t*100)[0] - np.pi/2
+    rotation_thigh = [[np.cos(thigh_angle), -np.sin(thigh_angle)], [np.sin(thigh_angle), np.cos(thigh_angle)]]
+
+    global_coord = np.dot(rotation_thigh, rel_thigh)
+    return global_coord
 
 def soleus_length(theta):
     """
     :param theta: body angle (up from prone horizontal)
     :return: soleus length
     """
-    rotation = [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
-    origin = np.dot(rotation, [.3, .03])
-    insertion = [-.05, -.02]
-    difference = origin - insertion
-    return np.sqrt(difference[0]**2 + difference[1]**2)
+    a = np.sqrt(0.2225**2+0.10757**2)
+    b = 0.414024
+    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(2*np.pi-theta-1.77465))
 
 
 def tibialis_length(theta):
@@ -25,25 +69,27 @@ def tibialis_length(theta):
     :param theta: body angle (up from prone horizontal)
     :return: tibialis anterior length
     """
-    rotation = [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
-    origin = np.dot(rotation, [.3, -.03])
-    insertion = [.06, -.03]
-    difference = origin - insertion
-    return np.sqrt(difference[0]**2 + difference[1]**2)
+    
+    a = 0.1059
+    b = 0.414024
+    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(theta))
 
 
-def gravity_moment(theta):
+def gravity_moment(theta, t):
     """
     :param theta: angle of body segment (up from prone)
     :return: moment about ankle due to force of gravity on body
     """
-    mass = 75 # body mass (kg; excluding feet)
-    centre_of_mass_distance = 1 # distance from ankle to body segment centre of mass (m)
+    mass = 2 # body mass (kg; excluding feet)
+    
     g = 9.81 # acceleration of gravity
-    return mass * g * centre_of_mass_distance * np.sin(theta - np.pi / 2)
+    ankle = get_global(theta, 0,0,t)
+    centroid = get_global(theta,0.6674,-0.3581,t)
+    centre_of_mass_distance = centroid[0] - ankle[0]
+    return mass * g * centre_of_mass_distance 
 
 
-def dynamics(x, soleus, tibialis, control):
+def dynamics(x, soleus, tibialis, t):
     """
     :param x: state vector (ankle angle, angular velocity, soleus normalized CE length, TA normalized CE length)
     :param soleus: soleus muscle (HillTypeModel)
@@ -57,48 +103,11 @@ def dynamics(x, soleus, tibialis, control):
     soleus_moment_arm = .05
     tibialis_moment_arm = .03
 
-    # soleus gains
-    Kp_s = 2.05 # proportional gain
-    Kd_s = 0.83 # derivative gain
-
-    # tibialis anterior gain
-    Kp_ta = 30 # proportional gain
-    Kd_ta = 10 # derivative gain
 
     # static activations
-    activation_s_static = 0.05
-    activation_ta_static = 0.5
+    activation_s = 0
+    activation_ta = a.get_amp(t)
 
-
-    if (control == 0): # Uncontrolled
-      activation_s = 0.05
-      activation_ta = 0.4  
-
-    elif (control == 1): # Simple constants controller
-      if x[1] > 0:
-        activation_s = 0.01
-        activation_ta = 0.6
-      else:
-        activation_s = 0.02
-        activation_ta = 0.2
-
-    elif(control == 2): # PD controller
-
-      error = ((np.pi/2) - x[0]) #Calculates error 
-
-      if(error > 0): # Leaning Forward (We want Soleus on)
-        activation_s = max(0,min(1,activation_s_static + error * Kp_s - x[1] * Kd_s))
-        activation_ta = min((error * Kp_ta/8), activation_ta_static/8)
-      elif(error <= 0): # Leaning Backwards (We want TA on)
-        activation_s = min((-1* error *	Kp_s/8), activation_s_static/8) 
-        activation_ta =max(0,min(1,activation_ta_static + -1* error * Kp_ta + x[1] * Kd_ta))
-      else: # Standing straight up
-        activation_s = activation_s_static
-        activation_ta = activation_ta_static
-    
-    else: # Default uncontrolled
-      activation_s = 0.05
-      activation_ta = 0.4 
 
     # use predefined functions to calculate total muscle lengths as a function of theta
     soleus_length_val = soleus_length(x[0])
@@ -114,10 +123,10 @@ def dynamics(x, soleus, tibialis, control):
     # calculate moments as defined by balance model mechanics 
     tau_s =  soleus_moment_arm * soleus.get_force(soleus_length_val, x[2])
     tau_ta = tibialis_moment_arm * tibialis.get_force(tibialis_length_val, x[3])
-    gravity_moment_val = gravity_moment(x[0])
+    gravity_moment_val = gravity_moment(x[0],t)
 
     # derivative of angular velocity is angular acceleration
-    x_1 = (tau_s - tau_ta + gravity_moment_val)/inertia_ankle
+    x_1 = (tau_ta - tau_s - gravity_moment_val)/inertia_ankle
 
     # derivative of normalized CE lengths is normalized velocity
     x_2 = get_velocity(activation_s, x[2], norm_soleus_tendon_length)
@@ -127,22 +136,18 @@ def dynamics(x, soleus, tibialis, control):
     return [x_0, x_1, x_2, x_3]
 
 
-def simulate(control, T):
-    """
-    Runs a simulation of the model and plots results.
-    :param control: True if balance should be controlled
-    :param T: total time to simulate, in seconds
-    """
-    rest_length_soleus = soleus_length(np.pi/2)
-    rest_length_tibialis = tibialis_length(np.pi/2)
+if __name__ == '__main__':
+  
+    rest_length_soleus = soleus_length(np.pi/2-+0.01)
+    rest_length_tibialis = tibialis_length(np.pi/2+0.05)
 
-    soleus = HillTypeMuscle(16000, .6*rest_length_soleus, .4*rest_length_soleus)
-    tibialis = HillTypeMuscle(2000, .6*rest_length_tibialis, .4*rest_length_tibialis)
+    soleus = HillTypeMuscle(70, .6*rest_length_soleus, .4*rest_length_soleus)
+    tibialis = HillTypeMuscle(100.3, .6*rest_length_tibialis, .4*rest_length_tibialis)
 
     def f(t, x):
-        return dynamics(x, soleus, tibialis, control)
+        return dynamics(x, soleus, tibialis, t)
 
-    sol = solve_ivp(f, [0, T], [np.pi/2-0.001, 0, 1, 1], rtol=1e-5, atol=1e-8)
+    sol = solve_ivp(f, [0, 1], [np.pi/2+0.05, 0, 1, 1], rtol=1e-5, atol=1e-8)
 
     time = sol.t
     theta = sol.y[0,:]
@@ -154,14 +159,13 @@ def simulate(control, T):
     soleus_moment = []
     tibialis_moment = []
     for th, ls, lt in zip(theta, soleus_norm_length_muscle, tibialis_norm_length_muscle):
-        soleus_moment.append(soleus_moment_arm * soleus.get_force(soleus_length(th), ls))
-        tibialis_moment.append(-tibialis_moment_arm * tibialis.get_force(tibialis_length(th), lt))
+        soleus_moment.append(-soleus_moment_arm * soleus.get_force(soleus_length(th), ls))
+        tibialis_moment.append(tibialis_moment_arm * tibialis.get_force(tibialis_length(th), lt))
 
     plt.figure()
     plt.subplot(2,1,1)
     plt.plot(time,sol.y[0,:])
-    plt.plot(time, np.full((len(time),1),np.pi/2))
-    plt.legend(('Body angle', 'pi/2 rad'))
+    plt.legend(('Body angle'))
     plt.ylabel('Body angle (rad)')
     plt.subplot(2,1,2)
     plt.plot(time, soleus_moment, 'r')
@@ -173,6 +177,6 @@ def simulate(control, T):
     plt.tight_layout()
     plt.show()
 
-simulate(2,5)
+
 
 

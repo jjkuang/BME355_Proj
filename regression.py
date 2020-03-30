@@ -88,8 +88,19 @@ def get_norm_emg(data):
 
 	return result
 
+
+def get_norm_general(data):
+	x = data[:,0]
+	y = data[:,1]
+
+	centres = np.arange(np.min(x) - 10, np.max(x) + 10, 5)
+	width = 5
+	result = Regression(x, y, centres, width, .1, sigmoids=True)
+	return result
+
+
 if __name__ == '__main__':
-	gait_data = load_data('./gait_data.csv')
+	gait_data = load_data('./ta_vs_gait.csv')
 	gait_data = np.array(gait_data)
 	gait_data_regress = get_norm_emg(gait_data)
 
