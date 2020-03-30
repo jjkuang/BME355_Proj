@@ -3,9 +3,7 @@ import matplotlib.pyplot as plt
 from math import e
 from regression import load_data, get_norm_emg
 
-gait_data = load_data('./gait_data.csv')
-gait_data = np.array(gait_data)
-gait_data_regress = get_norm_emg(gait_data)
+sampling_freq = 16000
 
 class Activation:
   '''
@@ -13,47 +11,96 @@ class Activation:
 
   Impulse Interval should be a field no?
   '''
-  def __init__(self, length, frequency, duty_cycle, amp, non_linearity, fatigue = None):
+  def __init__(self, length, frequency, duty_cycle, scaling, non_linearity, fatigue = None):
     '''
     frequency: Hz
     '''
     self.length = length
     self.frequency = frequency
     self.duty_cycle = duty_cycle
+    self.scaling = scaling
     self.non_linearity = non_linearity
     self.fatigue = fatigue
-
-  def get_activation_signal(self, length, frequency, duty_cycle, amp, non_linearity):
-
-    period = (1 * 1000)//frequency # ms
-
-    duty_on = int((period)* duty_cycle/100)
-    on = amp * np.ones(duty_on)
-
-    off = np.zeros(period - len(on))
+    self.activation = None
+    self.activation_non_linear = None
+    self.x = None
     
-    result = np.concatenate((on, off))
+  def get_activation_signal(self, fn):
 
-    temp = result
-    for _ in range(100 - 1):
-      result = np.concatenate((result, temp))
+    period = 1/self.frequency
+
+    duty_on = (period)* self.duty_cycle
+    on = np.arange(0,duty_on, 1/sampling_freq)
+    on = self.scaling * np.ones(np.size(on))
+    off = np.arange(0,period-duty_on, 1/sampling_freq)
+    off = np.zeros(np.size(off))
     
-    x = np.linspace(0, 100, len(result))
-    sin = gait_data_regress.eval(x)
+    pulse = np.concatenate((on, off))
 
-    result = np.multiply(result, sin)
-    plt.plot(x,result)
+    pulse_train = pulse
+    for _ in range(self.frequency):
+      pulse_train = np.concatenate((pulse_train, pulse))
+    
+    x = np.linspace(0, 100, len(pulse_train))
+    activation = fn.eval(x)
+
+    activation = np.multiply(pulse_train, activation)
+    activation_non_linear = (e**(self.non_linearity*activation)-1)/(e**self.non_linearity-1)
+    
+    self.x = x
+    self.activation = activation
+    self.activation_non_linear = activation_non_linear
+
+  def get_fatigue(self):
+    return np.trapz(self.activation_non_linear, dx = 1/sampling_freq)
+
+  def plot(self):
+    plt.plot(self.x, self.activation)
     plt.show()
-    activation_signal = (e**(non_linearity*result)-1)/(e**non_linearity-1)
-    plt.plot(x,activation_signal)
+    plt.plot(self.x, self.activation_non_linear)
     plt.show()
-    return activation_signal
   
-  # def get_amp(self, t):
+  def get_amp(self, t):
+    t = t * sampling_freq
+    t = t % sampling_freq
+    t = int(t)
+    return self.activation_non_linear[t]
+
+
+if __name__ == '__main__':
+  gait_data = load_data('./gait_data.csv')
+  gait_data = np.array(gait_data)
+  gait_data_regress = get_norm_emg(gait_data)
+  
+  length, frequency, duty_cycle, scaling, non_linearity = 1,35, 0.05, 1, -1
+  a = Activation(length, frequency, duty_cycle, scaling, non_linearity)
+  a.get_activation_signal(gait_data_regress)
+  a.plot()
+  
+#  dutys = np.arange(0,1,0.05)
+#  freqs = np.arange(20,50,1)
+#  fatigue = []
+#  
+#  for i in range(len(freqs)):   
+#    temp_fat = []
+#    for j in range(len(dutys)):
+#      temp = Activation(length, freqs[i], dutys[j], scaling, non_linearity)
+#      temp.get_activation_signal(gait_data_regress)
+#      temp_fat.append(temp.get_fatigue())
+#    fatigue.append(temp_fat)
+#  
+#  fatigue = np.array(fatigue)
+#  freqs = np.tile(freqs,(len(dutys),1))
+#  freqs = np.transpose(freqs)
+#  dutys = np.tile(dutys,(len(freqs),1))
+#  
+#  from mpl_toolkits.mplot3d import Axes3D 
+#  fig = plt.figure()
+#  ax = fig.gca(projection='3d')
+#  ax.scatter(freqs,dutys,fatigue)
+#  plt.show()
+
 
   
-  # def get_fatigue(self, signal, width):
 
-length, frequency, duty_cycle, amp, non_linearity = 1, 10, 50, 1, -1
-a = Activation(length, frequency, duty_cycle, amp, non_linearity)
-a.get_activation_signal(length, frequency, duty_cycle, amp, non_linearity)
+
