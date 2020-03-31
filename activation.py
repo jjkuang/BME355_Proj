@@ -76,8 +76,6 @@ class Activation:
         res = np.concatenate((res, abs(temp)))
       self.activation = res
     
-    
-    
 #    self.activation = self.activation/np.max(self.activation)
     self.activation_non_linear = (e**(self.non_linearity*self.activation)-1)/(e**self.non_linearity-1)
     self.x = x
@@ -97,7 +95,7 @@ class Activation:
 
 
 if __name__ == '__main__':
-  emg_data = load_data('./ta_vs_gait.csv')
+  emg_data = load_data('./data/ta_vs_gait.csv')
   emg_data = np.array(emg_data)
   emg_data_regress = get_norm_emg(emg_data)
   

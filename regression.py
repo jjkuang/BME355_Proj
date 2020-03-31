@@ -1,10 +1,8 @@
 import collections
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import fsolve
 from sklearn.linear_model import Ridge
 from scipy.special import expit
-from scipy.integrate import solve_ivp
 import csv
 
 def load_data(path):
@@ -100,7 +98,7 @@ def get_norm_general(data):
 
 
 if __name__ == '__main__':
-	gait_data = load_data('./ta_vs_gait.csv')
+	gait_data = load_data('./data/ta_vs_gait.csv')
 	gait_data = np.array(gait_data)
 	gait_data_regress = get_norm_emg(gait_data)
 

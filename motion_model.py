@@ -11,32 +11,32 @@ from activation import Activation
 from regression import load_data, get_norm_emg, get_norm_general
 
 # Get activation signal a
-gait_data = load_data('./ta_vs_gait.csv')
+gait_data = load_data('./data/ta_vs_gait.csv')
 gait_data = np.array(gait_data)
 gait_data_regress = get_norm_emg(gait_data)
 frequency, duty_cycle, scaling, non_linearity = 34, 0.5, 1, -1
 a = Activation(frequency, duty_cycle, scaling, non_linearity)
-a.get_activation_signal(gait_data_regress, shape="monophasic")
-a.plot()
+a.get_activation_signal(gait_data_regress, shape="halfsin")
+
 # Get ankle angle
-ankle_data = load_data('./dotted_ankle_vs_gait.csv')
+ankle_data = load_data('./data/ankle_vs_gait.csv')
 ankle_data = np.array(ankle_data)
 ankle_data = get_norm_general(ankle_data)
 
 # Get knee angle
-knee_data = load_data('./knee_vs_gait.csv')
+knee_data = load_data('./data/knee_vs_gait.csv')
 knee_data = np.array(knee_data)
 knee_data = get_norm_general(knee_data)
 
 # Get hip angle
-hip_data = load_data('./hip_vs_gait.csv')
+hip_data = load_data('./data/hip_vs_gait.csv')
 hip_data = np.array(hip_data)
 hip_data = get_norm_general(hip_data)
 
 act = []
 def get_global(theta, x, y, t):
     
-    ankle_angle = theta
+    ankle_angle = theta + np.pi/2
     rotation_ankle = [[np.cos(ankle_angle), -np.sin(ankle_angle)], [np.sin(ankle_angle), np.cos(ankle_angle)]]
     
     rel_knee = np.dot(rotation_ankle, [x, y])

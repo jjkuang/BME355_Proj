@@ -1,0 +1,77 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+from musculoskeletal import HillTypeMuscle, get_velocity
+from activation import Activation
+from regression import load_data, get_norm_emg, get_norm_general
+from motion_model import get_global
+
+def verify_rotation_matrices(t_start=0, t_end=1):
+  
+  # Get real ankle angle data
+  ankle_data = load_data('./data/ankle_vs_gait.csv')
+  ankle_data = np.array(ankle_data)
+  ankle_data = get_norm_general(ankle_data)
+  
+  # Get real ankle height data
+  ankle_height = load_data('./data/Foot-Centroid-Height_OG-vs-Gait.csv')
+  ankle_height = np.array(ankle_height)
+  ankle_height = np.transpose(ankle_height)
+  ankle_height[0] = ankle_height[0]/5
+  ankle_height[1] = ankle_height[1]/1000
+
+  # Get real ankle horizontal data
+  ankle_hor = load_data('./data/Foot-Centroid-Horizontal_OG-vs-Gait.csv')
+  ankle_hor = np.array(ankle_hor)
+  ankle_hor = np.transpose(ankle_hor)
+  ankle_hor[0] = ankle_hor[0]/5
+  ankle_hor[1] = ankle_hor[1]/1000
+
+  x = np.arange(t_start,t_end,0.001)
+  
+  position = [[],[]]
+  for ite in x:
+      coord = get_global(ankle_data.eval(ite*100)[0]*np.pi/180,0.06674,-0.03581,ite)
+      position[0].append(coord[0])
+      position[1].append(coord[1])
+  
+  plt.figure()
+  plt.plot(x, ankle_data.eval(x*100)*np.pi/180)
+  plt.xlabel("% Gait Cycle")
+  plt.ylabel("Ankle Angle Literature (rad)")
+  plt.show()
+  
+  plt.figure()
+  plt.plot(x,position[0])
+  plt.plot(ankle_hor[0], ankle_hor[1])
+  plt.legend(('from python', 'from solidworks'))
+  plt.xlabel("% Gait Cycle")
+  plt.ylabel("horizontal position over time (m)")
+  plt.show()
+  
+  plt.figure()
+  plt.plot(x,position[1])
+  plt.plot(ankle_height[0], ankle_height[1])
+  plt.legend(('from python', 'from solidworks'))
+  plt.xlabel("% Gait Cycle")
+  plt.ylabel("vertical position over time (m)")
+  plt.show()
+  
+  plt.figure()
+  plt.plot(position[0], position[1])
+  plt.scatter(position[0][0], position[1][0], marker='x', color='r')
+  plt.text(position[0][0], position[1][0], 'start')
+  plt.scatter(position[0][-1], position[1][-1], marker='x', color='g')
+  plt.text(position[0][-1], position[1][-1], 'end')
+  
+  plt.plot(ankle_hor[1], ankle_height[1])
+#  plt.scatter(ankle_hor[1][0], ankle_height[1][0], marker='x', color='r')
+#  plt.text(ankle_hor[1][0], ankle_height[1][0], 'start')
+#  plt.scatter(ankle_hor[1][-1], ankle_height[1][-1], marker='x', color='g')
+#  plt.text(ankle_hor[1][-1], ankle_height[1][-1], 'end') 
+  plt.legend(('from python', 'from solidworks'))
+  plt.xlabel("horizontal position (m)")
+  plt.ylabel("vertical position(m)")
+  
+if __name__ == '__main__':
+  verify_rotation_matrices(0,1)
