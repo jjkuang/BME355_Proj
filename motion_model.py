@@ -14,10 +14,10 @@ from regression import load_data, get_norm_emg, get_norm_general
 gait_data = load_data('./ta_vs_gait.csv')
 gait_data = np.array(gait_data)
 gait_data_regress = get_norm_emg(gait_data)
-frequency, duty_cycle, scaling, non_linearity = 50, 0.99, 1, -1
+frequency, duty_cycle, scaling, non_linearity = 34, 0.5, 1, -1
 a = Activation(frequency, duty_cycle, scaling, non_linearity)
-a.get_activation_signal(gait_data_regress)
-
+a.get_activation_signal(gait_data_regress, shape="monophasic")
+a.plot()
 # Get ankle angle
 ankle_data = load_data('./dotted_ankle_vs_gait.csv')
 ankle_data = np.array(ankle_data)
@@ -33,10 +33,7 @@ hip_data = load_data('./hip_vs_gait.csv')
 hip_data = np.array(hip_data)
 hip_data = get_norm_general(hip_data)
 
-x = np.arange(0,1,0.001)
-plt.plot(x, ankle_data.eval(x*100)*np.pi/180)
-plt.show()
-
+act = []
 def get_global(theta, x, y, t):
     
     ankle_angle = theta
@@ -45,13 +42,13 @@ def get_global(theta, x, y, t):
     rel_knee = np.dot(rotation_ankle, [x, y])
     rel_knee = rel_knee + [0.414024, 0]
     
-    knee_angle = -(knee_data.eval((t)%1*100)[0] * np.pi/180)
+    knee_angle = 2*np.pi-(knee_data.eval((t)%1*100)[0] * np.pi/180)
     rotation_knee = [[np.cos(knee_angle), -np.sin(knee_angle)], [np.sin(knee_angle), np.cos(knee_angle)]]
     
     rel_thigh = np.dot(rotation_knee, rel_knee)
     rel_thigh = rel_thigh + [0.42672, 0]
     
-    thigh_angle = hip_data.eval((t)%1*100)[0] * np.pi/180 - np.pi/2
+    thigh_angle = hip_data.eval((t)%1*100)[0] * np.pi/180 + 3*np.pi/2
     rotation_thigh = [[np.cos(thigh_angle), -np.sin(thigh_angle)], [np.sin(thigh_angle), np.cos(thigh_angle)]]
 
     global_coord = np.dot(rotation_thigh, rel_thigh)
@@ -62,9 +59,9 @@ def soleus_length(theta):
     :param theta: body angle (up from prone horizontal)
     :return: soleus length
     """
-    a = np.sqrt(0.02225**2+0.10757**2)
+    a = 0.10922
     b = 0.414024
-    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(2*np.pi-(np.pi+theta)-1.77465))
+    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(2*np.pi-(np.pi/2+theta)-1.77465))
 
 
 def tibialis_length(theta):
@@ -75,7 +72,7 @@ def tibialis_length(theta):
     
     a = 0.1059
     b = 0.414024
-    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(np.pi+theta))
+    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(np.pi/2+theta))
 
 
 def gravity_moment(theta, t):
@@ -83,7 +80,7 @@ def gravity_moment(theta, t):
     :param theta: angle of body segment (up from prone)
     :return: moment about ankle due to force of gravity on body
     """
-    mass = 2 # body mass (kg; excluding feet)
+    mass = 1.027 # body mass (kg; excluding feet)
     
     g = 9.81 # acceleration of gravity
     ankle = get_global(theta,0,0,t)
@@ -102,15 +99,15 @@ def dynamics(x, soleus, tibialis, t):
     """
 
     # constants
-    inertia_ankle = 90.0
+    inertia_ankle = 0.0197
     soleus_moment_arm = .05
     tibialis_moment_arm = .03
 
 
     # static activations
     activation_s = 0
-    activation_ta = a.get_amp(t)
-
+    activation_ta = 0
+    act.append(activation_ta)
 
     # use predefined functions to calculate total muscle lengths as a function of theta
     soleus_length_val = soleus_length(x[0])
@@ -141,8 +138,8 @@ def dynamics(x, soleus, tibialis, t):
 
 if __name__ == '__main__':
   
-    rest_length_soleus = soleus_length(22*np.pi/180)
-    rest_length_tibialis = tibialis_length(-40*np.pi/180)
+    rest_length_soleus = soleus_length(-45.75*np.pi/180)
+    rest_length_tibialis = tibialis_length(6.37*np.pi/180)
 
     soleus = HillTypeMuscle(70, .6*rest_length_soleus, .4*rest_length_soleus)
     tibialis = HillTypeMuscle(100.3, .6*rest_length_tibialis, .4*rest_length_tibialis)
@@ -150,8 +147,10 @@ if __name__ == '__main__':
     def f(t, x):
         return dynamics(x, soleus, tibialis, t)
 
-    sol = solve_ivp(f, [0, 2], [0.2638842871409215, 0, 1, 1], rtol=1e-5, atol=1e-8)
-
+    initial_state = [0,0,1,1]#[-0.2, 1.156, 0.8129, 1.045]
+    sol = solve_ivp(f, [0.6, 1], initial_state, rtol=1e-5, atol=1e-8)
+    plt.plot(act)
+    plt.show()
     time = sol.t
     theta = sol.y[0,:]
     soleus_norm_length_muscle = sol.y[2,:]
@@ -173,10 +172,13 @@ if __name__ == '__main__':
     
     # Angle and moments
     plt.figure()
-    plt.subplot(2,1,1)
     plt.plot(time,sol.y[0,:])
+    plt.plot(time, ankle_data.eval(time*100)*np.pi/180)
+    plt.legend(('sim', 'real'))
     plt.ylabel('Ankle angle (rad)')
-    plt.subplot(2,1,2)
+    plt.xlabel('Time (s)')
+    plt.show()
+    
     plt.plot(time, soleus_moment, 'r')
     plt.plot(time, tibialis_moment, 'g')
     
@@ -197,7 +199,9 @@ if __name__ == '__main__':
         coord = get_global(sol.y[0][i],0.06674,-0.03581,time[i])
         position[0].append(coord[0])
         position[1].append(coord[1])
-        
+    
+    plt.plot(time,position[1],marker=8)
+    plt.show()
     plt.plot(position[0],position[1],marker=8)
     plt.show()
 

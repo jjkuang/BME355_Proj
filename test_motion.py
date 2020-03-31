@@ -12,7 +12,7 @@ ankle_data = np.array(ankle_data)
 ankle_data = get_norm_general(ankle_data)
 
 
-x = np.arange(0,1,0.001)
+x = np.arange(0.6,1,0.001)
 plt.plot(x, ankle_data.eval(x*100)*np.pi/180)
 plt.show()
 
@@ -21,6 +21,10 @@ for ite in x:
     coord = get_global(ankle_data.eval(ite*100)[0]*np.pi/180,0.06674,-0.03581,ite)
     position[0].append(coord[0])
     position[1].append(coord[1])
-    
-plt.plot(position[0],position[1],marker=8)
+
+
+plt.plot(x,position[0])
 plt.show()
+plt.plot(x,position[1])
+plt.show()
+plt.plot(position[0], position[1])

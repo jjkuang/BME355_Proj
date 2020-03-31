@@ -400,7 +400,7 @@ if __name__ == '__main__':
     emg_data = np.array(emg_data)
     emg_data_regress = get_norm_emg(emg_data)
     
-    frequency, duty_cycle, scaling, non_linearity = 20, 0.5, 1, -1
+    frequency, duty_cycle, scaling, non_linearity = 35, 0.5, 1, -1
     a = Activation(frequency, duty_cycle, scaling, non_linearity)
     a.get_activation_signal(emg_data_regress)
     
@@ -413,7 +413,7 @@ if __name__ == '__main__':
         return get_velocity(a.get_amp(t), np.array([x]), np.array([normalized_tendon_length])) 
 
     # Simulate using rk45
-    sol = solve_ivp(f, [0, 2], np.array([1.0]), max_step=.01, rtol=1e-5, atol=1e-8)
+    sol = solve_ivp(f, [0.6, 1], np.array([1.0]), max_step=.01, rtol=1e-5, atol=1e-8)
     a.plot()
     # Plot length and force over time
     plt.figure()
