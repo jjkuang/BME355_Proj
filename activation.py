@@ -11,16 +11,15 @@ class Activation:
 
   Impulse Interval should be a field no?
   '''
-  def __init__(self, length, frequency, duty_cycle, scaling, non_linearity, fatigue = None):
+  def __init__(self, frequency, duty_cycle, scaling, non_linearity):
     '''
     frequency: Hz
     '''
-    self.length = length
     self.frequency = frequency
     self.duty_cycle = duty_cycle
     self.scaling = scaling
     self.non_linearity = non_linearity
-    self.fatigue = fatigue
+    
     self.activation = None
     self.activation_non_linear = None
     self.x = None
@@ -68,13 +67,13 @@ class Activation:
 
 
 if __name__ == '__main__':
-  gait_data = load_data('./gait_data.csv')
-  gait_data = np.array(gait_data)
-  gait_data_regress = get_norm_emg(gait_data)
+  emg_data = load_data('./ta_vs_gait.csv')
+  emg_data = np.array(emg_data)
+  emg_data_regress = get_norm_emg(emg_data)
   
-  length, frequency, duty_cycle, scaling, non_linearity = 1,35, 0.05, 1, -1
-  a = Activation(length, frequency, duty_cycle, scaling, non_linearity)
-  a.get_activation_signal(gait_data_regress)
+  frequency, duty_cycle, scaling, non_linearity = 35, 0.05, 1, -1
+  a = Activation(frequency, duty_cycle, scaling, non_linearity)
+  a.get_activation_signal(emg_data_regress)
   a.plot()
   
 #  dutys = np.arange(0,1,0.05)
@@ -85,7 +84,7 @@ if __name__ == '__main__':
 #    temp_fat = []
 #    for j in range(len(dutys)):
 #      temp = Activation(length, freqs[i], dutys[j], scaling, non_linearity)
-#      temp.get_activation_signal(gait_data_regress)
+#      temp.get_activation_signal(emg_data_regress)
 #      temp_fat.append(temp.get_fatigue())
 #    fatigue.append(temp_fat)
 #  

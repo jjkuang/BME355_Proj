@@ -396,14 +396,13 @@ if __name__ == '__main__':
     max_isometric_force = 100.0
     total_length = resting_muscle_length + resting_tendon_length
 
-
-    gait_data = load_data('./ta_vs_gait.csv')
-    gait_data = np.array(gait_data)
-    gait_data_regress = get_norm_emg(gait_data)
+    emg_data = load_data('./ta_vs_gait.csv')
+    emg_data = np.array(emg_data)
+    emg_data_regress = get_norm_emg(emg_data)
     
-    length, frequency, duty_cycle, scaling, non_linearity = 1,20, 0.5, 1, -1
-    a = Activation(length, frequency, duty_cycle, scaling, non_linearity)
-    a.get_activation_signal(gait_data_regress)
+    frequency, duty_cycle, scaling, non_linearity = 20, 0.5, 1, -1
+    a = Activation(frequency, duty_cycle, scaling, non_linearity)
+    a.get_activation_signal(emg_data_regress)
     
     # Create an HillTypeMuscle using the given constants
     muscle = HillTypeMuscle(max_isometric_force, resting_muscle_length, resting_tendon_length)

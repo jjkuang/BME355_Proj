@@ -14,12 +14,12 @@ from regression import load_data, get_norm_emg, get_norm_general
 gait_data = load_data('./ta_vs_gait.csv')
 gait_data = np.array(gait_data)
 gait_data_regress = get_norm_emg(gait_data)
-length, frequency, duty_cycle, scaling, non_linearity = 1,20, 0.99, 1, -1
-a = Activation(length, frequency, duty_cycle, scaling, non_linearity)
+frequency, duty_cycle, scaling, non_linearity = 50, 0.99, 1, -1
+a = Activation(frequency, duty_cycle, scaling, non_linearity)
 a.get_activation_signal(gait_data_regress)
 
 # Get ankle angle
-ankle_data = load_data('./ankle_vs_gait.csv')
+ankle_data = load_data('./dotted_ankle_vs_gait.csv')
 ankle_data = np.array(ankle_data)
 ankle_data = get_norm_general(ankle_data)
 
@@ -33,22 +33,25 @@ hip_data = load_data('./hip_vs_gait.csv')
 hip_data = np.array(hip_data)
 hip_data = get_norm_general(hip_data)
 
+x = np.arange(0,1,0.001)
+plt.plot(x, ankle_data.eval(x*100)*np.pi/180)
+plt.show()
 
 def get_global(theta, x, y, t):
     
-    ankle_angle = theta - np.pi
+    ankle_angle = theta
     rotation_ankle = [[np.cos(ankle_angle), -np.sin(ankle_angle)], [np.sin(ankle_angle), np.cos(ankle_angle)]]
     
     rel_knee = np.dot(rotation_ankle, [x, y])
     rel_knee = rel_knee + [0.414024, 0]
     
-    knee_angle = knee_data.eval(t*100)[0]
+    knee_angle = -(knee_data.eval((t)%1*100)[0] * np.pi/180)
     rotation_knee = [[np.cos(knee_angle), -np.sin(knee_angle)], [np.sin(knee_angle), np.cos(knee_angle)]]
     
     rel_thigh = np.dot(rotation_knee, rel_knee)
     rel_thigh = rel_thigh + [0.42672, 0]
     
-    thigh_angle = hip_data.eval(t*100)[0] - np.pi/2
+    thigh_angle = hip_data.eval((t)%1*100)[0] * np.pi/180 - np.pi/2
     rotation_thigh = [[np.cos(thigh_angle), -np.sin(thigh_angle)], [np.sin(thigh_angle), np.cos(thigh_angle)]]
 
     global_coord = np.dot(rotation_thigh, rel_thigh)
@@ -59,9 +62,9 @@ def soleus_length(theta):
     :param theta: body angle (up from prone horizontal)
     :return: soleus length
     """
-    a = np.sqrt(0.2225**2+0.10757**2)
+    a = np.sqrt(0.02225**2+0.10757**2)
     b = 0.414024
-    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(2*np.pi-theta-1.77465))
+    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(2*np.pi-(np.pi+theta)-1.77465))
 
 
 def tibialis_length(theta):
@@ -72,7 +75,7 @@ def tibialis_length(theta):
     
     a = 0.1059
     b = 0.414024
-    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(theta))
+    return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(np.pi+theta))
 
 
 def gravity_moment(theta, t):
@@ -83,9 +86,9 @@ def gravity_moment(theta, t):
     mass = 2 # body mass (kg; excluding feet)
     
     g = 9.81 # acceleration of gravity
-    ankle = get_global(theta, 0,0,t)
-    centroid = get_global(theta,0.6674,-0.3581,t)
-    centre_of_mass_distance = centroid[0] - ankle[0]
+    ankle = get_global(theta,0,0,t)
+    centroid = get_global(theta,0.06674,-0.03581,t)
+    centre_of_mass_distance = ankle[0] - centroid[0]
     return mass * g * centre_of_mass_distance 
 
 
@@ -126,7 +129,7 @@ def dynamics(x, soleus, tibialis, t):
     gravity_moment_val = gravity_moment(x[0],t)
 
     # derivative of angular velocity is angular acceleration
-    x_1 = (tau_ta - tau_s - gravity_moment_val)/inertia_ankle
+    x_1 = (tau_ta - tau_s + gravity_moment_val)/inertia_ankle
 
     # derivative of normalized CE lengths is normalized velocity
     x_2 = get_velocity(activation_s, x[2], norm_soleus_tendon_length)
@@ -138,8 +141,8 @@ def dynamics(x, soleus, tibialis, t):
 
 if __name__ == '__main__':
   
-    rest_length_soleus = soleus_length(np.pi/2-+0.01)
-    rest_length_tibialis = tibialis_length(np.pi/2+0.05)
+    rest_length_soleus = soleus_length(22*np.pi/180)
+    rest_length_tibialis = tibialis_length(-40*np.pi/180)
 
     soleus = HillTypeMuscle(70, .6*rest_length_soleus, .4*rest_length_soleus)
     tibialis = HillTypeMuscle(100.3, .6*rest_length_tibialis, .4*rest_length_tibialis)
@@ -147,7 +150,7 @@ if __name__ == '__main__':
     def f(t, x):
         return dynamics(x, soleus, tibialis, t)
 
-    sol = solve_ivp(f, [0, 1], [np.pi/2+0.05, 0, 1, 1], rtol=1e-5, atol=1e-8)
+    sol = solve_ivp(f, [0, 2], [0.2638842871409215, 0, 1, 1], rtol=1e-5, atol=1e-8)
 
     time = sol.t
     theta = sol.y[0,:]
@@ -161,20 +164,41 @@ if __name__ == '__main__':
     for th, ls, lt in zip(theta, soleus_norm_length_muscle, tibialis_norm_length_muscle):
         soleus_moment.append(-soleus_moment_arm * soleus.get_force(soleus_length(th), ls))
         tibialis_moment.append(tibialis_moment_arm * tibialis.get_force(tibialis_length(th), lt))
-
+      
+    # Muscle lengths
+    plt.plot(time, sol.y[2,:])
+    plt.plot(time, sol.y[3,:])
+    plt.legend(('norm soleus length', 'norm ta length'))
+    plt.show()
+    
+    # Angle and moments
     plt.figure()
     plt.subplot(2,1,1)
     plt.plot(time,sol.y[0,:])
-    plt.legend(('Body angle'))
-    plt.ylabel('Body angle (rad)')
+    plt.ylabel('Ankle angle (rad)')
     plt.subplot(2,1,2)
     plt.plot(time, soleus_moment, 'r')
     plt.plot(time, tibialis_moment, 'g')
-    plt.plot(time, gravity_moment(sol.y[0,:]), 'k')
+    
+    grav_mom = []
+    for i in range(len(time)):
+      grav_mom.append(gravity_moment(sol.y[0,:][i],time[i]))
+      
+    plt.plot(time, grav_mom, 'k')
     plt.legend(('soleus', 'tibialis', 'gravity'))
     plt.xlabel('Time (s)')
     plt.ylabel('Torques (Nm)')
     plt.tight_layout()
+    plt.show()
+
+    # Ankle trajectory
+    position = [[],[]]
+    for i in range(len(time)):
+        coord = get_global(sol.y[0][i],0.06674,-0.03581,time[i])
+        position[0].append(coord[0])
+        position[1].append(coord[1])
+        
+    plt.plot(position[0],position[1],marker=8)
     plt.show()
 
 
