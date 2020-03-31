@@ -21,6 +21,7 @@ def load_data(path):
 		gait_data.append([percent_gait[i], intensity[i]])
 	return gait_data
 
+
 class Gaussian:
 	def __init__(self, mu, sigma):
 		self.mu = mu
@@ -87,7 +88,7 @@ def get_norm_emg(data):
 	return result
 
 
-def get_norm_general(data):
+def get_regress_general(data):
 	x = data[:,0]
 	y = data[:,1]
 

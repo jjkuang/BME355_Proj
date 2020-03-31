@@ -1,17 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
-from musculoskeletal import HillTypeMuscle, get_velocity
-from activation import Activation
-from regression import load_data, get_norm_emg, get_norm_general
-from motion_model import get_global
+from regression import load_data, get_regress_general
+from motion_model import MotionModel
 
 def verify_rotation_matrices(t_start=0, t_end=1):
+  motion_model = MotionModel()
   
   # Get real ankle angle data
   ankle_data = load_data('./data/ankle_vs_gait.csv')
   ankle_data = np.array(ankle_data)
-  ankle_data = get_norm_general(ankle_data)
+  ankle_data = get_regress_general(ankle_data)
   
   # Get real ankle height data
   ankle_height = load_data('./data/Foot-Centroid-Height_OG-vs-Gait.csv')
@@ -31,16 +29,18 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   
   position = [[],[]]
   for ite in x:
-      coord = get_global(ankle_data.eval(ite*100)[0]*np.pi/180,0.06674,-0.03581,ite)
+      coord = motion_model.get_global(ankle_data.eval(ite*100)[0]*np.pi/180,0.06674,-0.03581,ite)
       position[0].append(coord[0])
       position[1].append(coord[1])
   
+  # Plot ankle from literature 
   plt.figure()
   plt.plot(x, ankle_data.eval(x*100)*np.pi/180)
   plt.xlabel("% Gait Cycle")
   plt.ylabel("Ankle Angle Literature (rad)")
   plt.show()
   
+  # Plot global horizontal of centroid
   plt.figure()
   plt.plot(x,position[0])
   plt.plot(ankle_hor[0], ankle_hor[1])
@@ -49,6 +49,7 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   plt.ylabel("horizontal position over time (m)")
   plt.show()
   
+  # Plot global vertical of centroid
   plt.figure()
   plt.plot(x,position[1])
   plt.plot(ankle_height[0], ankle_height[1])
@@ -57,6 +58,7 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   plt.ylabel("vertical position over time (m)")
   plt.show()
   
+  # Plot phase portraits of centroid
   plt.figure()
   plt.plot(position[0], position[1])
   plt.scatter(position[0][0], position[1][0], marker='x', color='r')
@@ -72,6 +74,7 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   plt.legend(('from python', 'from solidworks'))
   plt.xlabel("horizontal position (m)")
   plt.ylabel("vertical position(m)")
+  plt.show()
   
 if __name__ == '__main__':
   verify_rotation_matrices(0,1)
