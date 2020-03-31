@@ -24,31 +24,36 @@ class Activation:
     self.activation_non_linear = None
     self.x = None
     
-  def get_activation_signal(self, fn):
+  def get_activation_signal(self, fn, shape="monophasic"):
 
     period = 1/self.frequency
-
-    duty_on = (period)* self.duty_cycle
-    on = np.arange(0,duty_on, 1/sampling_freq)
-    on = self.scaling * np.ones(np.size(on))
-    off = np.arange(0,period-duty_on, 1/sampling_freq)
-    off = np.zeros(np.size(off))
     
-    pulse = np.concatenate((on, off))
+    pulse = None
+    if shape == "monophasic"  or shape == "constant":
+      duty_on = (period)* self.duty_cycle
+      on = np.arange(0,duty_on, 1/sampling_freq)
+      on = self.scaling * np.ones(np.size(on))
+      off = np.arange(0,period-duty_on, 1/sampling_freq)
+      off = np.zeros(np.size(off))
+      pulse = np.concatenate((on, off))
 
+    
     pulse_train = pulse
     for _ in range(self.frequency):
       pulse_train = np.concatenate((pulse_train, pulse))
     
     x = np.linspace(0, 100, len(pulse_train))
     activation = fn.eval(x)
-
-    activation = np.multiply(pulse_train, activation)
-    activation_non_linear = (e**(self.non_linearity*activation)-1)/(e**self.non_linearity-1)
     
+
+    
+    if shape == "monophasic":
+      self.activation = np.multiply(pulse_train, activation)
+    elif shape == "constant":
+      self.activation = pulse_train
+      
+    self.activation_non_linear = (e**(self.non_linearity*self.activation)-1)/(e**self.non_linearity-1)
     self.x = x
-    self.activation = activation
-    self.activation_non_linear = activation_non_linear
 
   def get_fatigue(self):
     return np.trapz(self.activation_non_linear, dx = 1/sampling_freq)
@@ -71,9 +76,9 @@ if __name__ == '__main__':
   emg_data = np.array(emg_data)
   emg_data_regress = get_norm_emg(emg_data)
   
-  frequency, duty_cycle, scaling, non_linearity = 35, 0.05, 1, -1
+  frequency, duty_cycle, scaling, non_linearity = 35, 0.5, 1.0, -1
   a = Activation(frequency, duty_cycle, scaling, non_linearity)
-  a.get_activation_signal(emg_data_regress)
+  a.get_activation_signal(emg_data_regress, shape="monophasic")
   a.plot()
   
 #  dutys = np.arange(0,1,0.05)
