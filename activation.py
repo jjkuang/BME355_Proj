@@ -127,7 +127,3 @@ if __name__ == '__main__':
 #  ax.scatter(freqs,dutys,fatigue)
 #  plt.show()
 
-
-  
-
-
