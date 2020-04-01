@@ -25,7 +25,10 @@ class MotionModel:
       rest_length_tibialis = self.tibialis_length(-30*np.pi/180)
   
       self.soleus = HillTypeMuscle(70, .6*rest_length_soleus, .4*rest_length_soleus)
-      self.tibialis = HillTypeMuscle(100.3, .6*rest_length_tibialis, .4*rest_length_tibialis)
+      self.tibialis = HillTypeMuscle(100.03, .6*rest_length_tibialis, .4*rest_length_tibialis)
+
+      # theta, velocity, initial CE length of soleus, initial CE length of TA
+      self.initial_state = [-0.27,-2.2,1,1] #[-0.2, 1.156, 0.8129, 1.045]
 
 
   def get_global(self,theta, x, y, t):
@@ -214,7 +217,16 @@ class MotionModel:
           coord = self.get_global(theta[i],0.06674,-0.03581,time[i])
           position[0].append(coord[0])
           position[1].append(coord[1])
-      
+
+      # Toe height vs time
+      gnd_hip = 0.92964  # m
+      toe_height = []
+      for i in range(len(time)):
+          coord = self.get_global(theta[i],0.2218,0,time[i])
+          toe_hip = -coord[1]
+          toe_height.append(gnd_hip - toe_hip)
+
+      # Plot vertical position over gait cycle
       plt.figure()
       plt.plot(time,position[1])
       plt.plot(x,true_position[1])
@@ -223,6 +235,7 @@ class MotionModel:
       plt.ylabel("vertical position over time (m)")
       plt.show()
       
+      # Plot vertical position of COM to horizontal posn of COM
       plt.figure()
       plt.plot(position[0], position[1])
       plt.scatter(position[0][0], position[1][0], marker='x', color='r')
@@ -235,12 +248,18 @@ class MotionModel:
       plt.ylabel("vertical position(m)")
       plt.show()
       
+      # Plot toe height over gait cycle (swing phase to end)
+      plt.figure()
+      plt.plot(time,toe_height)
+      plt.xlabel("% Gait Cycle")
+      plt.ylabel("toe height (m)")
+      plt.show()
+
   def simulate(self):
     def f(t, x):
         return self.dynamics(x, self.soleus, self.tibialis, t)
 
-    initial_state = [-0.27,-2.2,1,1] #[-0.2, 1.156, 0.8129, 1.045]
-    sol = solve_ivp(f, [0.6, 1], initial_state, rtol=1e-5, atol=1e-8)
+    sol = solve_ivp(f, [0.6, 1], self.initial_state, rtol=1e-5, atol=1e-8)
     
     self.plot_graphs(sol.t, sol.y[0,:], sol.y[2,:], sol.y[3,:])
   
