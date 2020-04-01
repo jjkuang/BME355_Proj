@@ -27,6 +27,9 @@ class MotionModel:
       self.soleus = HillTypeMuscle(70, .6*rest_length_soleus, .4*rest_length_soleus)
       self.tibialis = HillTypeMuscle(100.03, .6*rest_length_tibialis, .4*rest_length_tibialis)
 
+      # theta, velocity, initial CE length of soleus, initial CE length of TA
+      self.initial_state = [-0.27,-2.2,1,1] #[-0.2, 1.156, 0.8129, 1.045]
+
 
   def get_global(self,theta, x, y, t):
       
@@ -232,8 +235,7 @@ class MotionModel:
     def f(t, x):
         return self.dynamics(x, self.soleus, self.tibialis, t)
 
-    initial_state = [-0.27,-2.2,1,1] #[-0.2, 1.156, 0.8129, 1.045]
-    sol = solve_ivp(f, [0.6, 1], initial_state, rtol=1e-5, atol=1e-8)
+    sol = solve_ivp(f, [0.6, 1], self.initial_state, rtol=1e-5, atol=1e-8)
     
     self.plot_graphs(sol.t, sol.y[0,:], sol.y[2,:], sol.y[3,:])
   
