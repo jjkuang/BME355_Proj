@@ -80,10 +80,34 @@ class MotionModel:
       g = 9.81 # acceleration of gravity
       ankle = self.get_global(theta,0,0, t)
       centroid = self.get_global(theta,0.06674,-0.03581,t)
-      centre_of_mass_distance = ankle[0] - centroid[0]
-      return mass * g * centre_of_mass_distance 
-  
-  
+      centre_of_mass_distance_x = ankle[0] - centroid[0]
+      return mass * g * centre_of_mass_distance_x
+
+  def acceleration_moment_x(self, theta, t):
+      """
+      :param theta: angle of body segment (up from prone)
+      :return: moment about ankle due to force of gravity on body
+      """
+      mass = 1.027  # mass of foot (kg)
+
+      ankle = self.get_global(theta, 0, 0, t)
+      centroid = self.get_global(theta, 0.06674, -0.03581, t)
+      centre_of_mass_distance_x = ankle[0] - centroid[0]
+      return mass * acceleration * centre_of_mass_distance_x
+
+  def acceleration_moment_y(self, theta, t):
+      """
+      :param theta: angle of body segment (up from prone)
+      :return: moment about ankle due to force of gravity on body
+      """
+      mass = 1.027  # mass of foot (kg)
+
+      ankle = self.get_global(theta, 0, 0, t)
+      centroid = self.get_global(theta, 0.06674, -0.03581, t)
+      centre_of_mass_distance_y = ankle[1] - centroid[1]
+      return mass * acceleration * centre_of_mass_distance_y
+
+
   def dynamics(self,x, soleus, tibialis, t):
       """
       :param x: state vector (ankle angle, angular velocity, soleus normalized CE length, TA normalized CE length)
