@@ -41,28 +41,31 @@ class DataLoader:
     return self.emg_function
   
   def activation(self, x):
-    return self.emg_function.eval(x)
+    return self.emg_function.eval(x* 100)
   
   def ankle_angle(self, x):
-    return self.ankle_function.eval(x)
+    return self.ankle_function.eval(x * 100)
+  
+  def ankle_velocity(self, x):
+    return 100*derivative(self.ankle_function, x * 100, h=0.001)
   
   def knee_angle(self, x):
-    return self.knee_function.eval(x)
+    return self.knee_function.eval(x * 100)
   
   def hip_angle(self, x):
-    return self.hip_function.eval(x)
+    return self.hip_function.eval(x * 100)
   
   def shank_velocity(self, x):
-    return 100*derivative(self.knee_function, x, h=0.001)
+    return 100*derivative(self.knee_function, x * 100, h=0.001)
   
   def shank_acceleration(self, x):
-    return derivative(self.shank_velocity_function, x, h=0.001)
+    return derivative(self.shank_velocity_function, x * 100, h=0.001)
   
   def thigh_velocity(self, x):
-    return 100*derivative(self.hip_function, x, h=0.001)
+    return 100*derivative(self.hip_function, x * 100, h=0.001)
   
   def thigh_acceleration(self, x):
-    return derivative(self.thigh_velocity_function, x, h=0.001)
+    return derivative(self.thigh_velocity_function, x * 100, h=0.001)
   
   
 def derivative(f,a,method='central',h=0.01):
@@ -79,7 +82,7 @@ def derivative(f,a,method='central',h=0.01):
 if __name__ == '__main__':
   published_data = DataLoader()
   
-  x = np.arange(0.0,100.0,1.0)
+  x = np.arange(0.0,1.0,0.01)
   
   plt.figure()
   plt.plot(x, published_data.activation(x))
@@ -90,12 +93,16 @@ if __name__ == '__main__':
   plt.plot(x, published_data.ankle_angle(x))
   plt.title("Ankle Angle")
   plt.show()
+  
+  plt.figure()
+  plt.plot(x, published_data.ankle_velocity(x))
+  plt.title("Ankle Velocity")
+  plt.show()
 
   plt.figure()
   plt.plot(x, published_data.knee_angle(x))
   plt.title("Knee Angle")
   plt.show()
-
 
   plt.figure()
   plt.plot(x, published_data.shank_velocity(x))
