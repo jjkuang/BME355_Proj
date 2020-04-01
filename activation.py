@@ -83,8 +83,8 @@ class Activation:
   def get_fatigue(self):
     return np.trapz(self.activation_non_linear, dx = 1/sampling_freq)
 
-  def plot(self):
-    plt.plot(self.x, self.activation_non_linear)
+  def plot(self, start=0, end=1):
+    plt.plot(self.x[int(start*sampling_freq):end*sampling_freq], self.activation_non_linear[int(start*sampling_freq):end*sampling_freq])
     plt.show()
   
   def get_amp(self, t):
