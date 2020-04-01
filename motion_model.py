@@ -31,7 +31,6 @@ class MotionModel:
       
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
       self.a.get_activation_signal(self.lit_data.activation_function(), shape="monophasic")
-      self.a.plot(self.start,self.end )
       
       rest_length_soleus = self.soleus_length(20*np.pi/180)
       rest_length_tibialis = self.tibialis_length(-40*np.pi/180) # lower is earlier activation
