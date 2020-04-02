@@ -68,7 +68,6 @@ class MotionModel:
       :param theta: body angle (up from prone horizontal)
       :return: tibialis anterior length
       """
-      
       a = 0.1059
       b = 0.414024
       return np.sqrt(a**2 + b**2 - 2*a*b*np.cos(np.pi/2-theta))
@@ -108,19 +107,19 @@ class MotionModel:
       k_norm = k_norm_mag*np.array([k_norm_dir/abs(k_norm_dir) * abs(np.cos(k_norm_dir)),
                                      abs(np.sin(k_norm_dir))])
 
-      k_tan_mag = abs(t_alpha)*thigh_len
+      k_tan_mag = abs(t_alpha) * thigh_len
       k_tan_dir = hip_theta
 
       k_tan = k_tan_mag*np.array([-t_alpha/abs(t_alpha) * abs(np.cos(k_tan_dir)),
                                    t_alpha/abs(t_alpha)*hip_theta/abs(hip_theta) * abs(np.sin(k_tan_dir))])
 
-      ak_norm_mag = s_omega**2 * shank_len
+      ak_norm_mag = (s_omega**2) * shank_len
       ak_norm_dir = np.pi/2 + abs(hip_theta) - abs(knee_theta)
 
       ak_norm = ak_norm_mag * np.array([(np.pi/2-ak_norm_dir)/abs(np.pi/2-ak_norm_dir) * abs(np.cos(ak_norm_dir)),
                                abs(np.sin(ak_norm_dir))])
 
-      ak_tan_mag = abs(s_alpha)*shank_len
+      ak_tan_mag = abs(s_alpha) * shank_len
       ak_tan_dir = -abs(hip_theta) + abs(knee_theta)
 
       ak_tan = ak_tan_mag * np.array([s_alpha/abs(s_alpha) * abs(np.cos(ak_tan_dir)),
@@ -128,6 +127,7 @@ class MotionModel:
 
       a_acceleration = [k_norm[0] + k_tan[0] + ak_norm[0] + ak_tan[0],
                         k_norm[1] + k_tan[1] + ak_norm[1] + ak_tan[1]]
+
       return a_acceleration
 
   def get_acceleration_com_a_norm(self, theta, t, f_omega):
@@ -141,12 +141,12 @@ class MotionModel:
       centroid = self.get_global(theta, 0.06674, -0.03581, t)
       d_com_x = centroid[0] - ankle[0]
       d_com_y = centroid[1] - ankle[1]
-      d_com = np.sqrt(d_com_x ** 2 + d_com_y ** 2)
+      d_com = np.sqrt((d_com_x ** 2) + (d_com_y ** 2))
 
       com_a_norm_mag = (f_omega ** 2) * d_com
       com_a_norm_dir = abs(np.arctan(abs(d_com_y) / abs(d_com_x)))
 
-      com_a_norm = com_a_norm_mag * np.array([(d_com_x) / abs(d_com_x) * abs(np.cos(com_a_norm_dir)),
+      com_a_norm = com_a_norm_mag * np.array([-1*(d_com_x) / abs(d_com_x) * abs(np.cos(com_a_norm_dir)),
                                      abs(np.sin(com_a_norm_dir))])
       return com_a_norm
 
@@ -174,7 +174,7 @@ class MotionModel:
 
       ankle = self.get_global(theta, 0, 0, t)
       centroid = self.get_global(theta, 0.06674, -0.03581, t)
-      centre_of_mass_distance_x = ankle[0] - centroid[0]
+      centre_of_mass_distance_x = centroid[0] - ankle[0]
 
       return mass * a_acceleration[1] * centre_of_mass_distance_x
 
@@ -204,7 +204,7 @@ class MotionModel:
 
       ankle = self.get_global(theta, 0, 0, t)
       centroid = self.get_global(theta, 0.06674, -0.03581, t)
-      centre_of_mass_distance_x = ankle[0] - centroid[0]
+      centre_of_mass_distance_x = centroid[0] - ankle[0]
 
       return mass * com_a_norm[1] * centre_of_mass_distance_x
 
@@ -216,7 +216,7 @@ class MotionModel:
       d_com_y = centroid[1] - ankle[1]
       d_com = np.sqrt(d_com_x ** 2 + d_com_y ** 2)
 
-      com_a_tan_dir = np.pi - abs(np.arctan(abs(d_com_y) / abs(d_com_x)))
+      com_a_tan_dir = np.pi/2 - abs(np.arctan(abs(d_com_y) / abs(d_com_x)))
 
       com_a_tan_terms = [mass * d_com * abs(np.cos(com_a_tan_dir)),
                          mass * d_com * abs(np.sin(com_a_tan_dir))*d_com_x/abs(d_com_x)]
@@ -264,8 +264,8 @@ class MotionModel:
       com_a_terms = self.solve_com_a_tan(t,x[0])
 
       # derivative of angular velocity is angular acceleration
-#      x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment - ankle_linear_y_moment + \
-#             normal_com_a_x_moment - normal_com_a_y_moment)/(inertia_ankle - com_a_terms[0] + com_a_terms[1])
+#      x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment + ankle_linear_y_moment + \
+#             normal_com_a_x_moment + normal_com_a_y_moment)/(inertia_ankle + com_a_terms[0] + com_a_terms[1])
       
       x_1 = (tau_ta - tau_s + gravity_moment_val)/(inertia_ankle) #- com_a_terms[0] + com_a_terms[1])
   
@@ -302,7 +302,7 @@ class MotionModel:
           ankle_linear_y_moment.append(self.ankle_linear_acceleration_moment_y(t,th))
           normal_com_a_x_moment.append(self.com_a_moment_norm_x(t,w,th))
           normal_com_a_y_moment.append(self.com_a_moment_norm_y(t,w,th))
-          
+
       plt.figure()
       plt.plot(time, soleus_moment, 'r')
       plt.plot(time, tibialis_moment, 'g')
@@ -323,8 +323,8 @@ class MotionModel:
       plt.plot(time, tibialis_norm_length_muscle)
       plt.legend(('norm soleus length', 'norm ta length'))
       plt.show()
-      
-      # Angle 
+
+      # Angle
       plt.figure()
       plt.plot(time,theta)
       plt.plot(time, self.lit_data.ankle_angle(time)*np.pi/180)
@@ -397,7 +397,7 @@ class MotionModel:
         return self.dynamics(x, self.soleus, self.tibialis, t)
 
     if mode == "rk45":
-      sol = solve_ivp(f, [0.6, 1], self.initial_state, rtol=1e-5, atol=1e-8)
+      sol = solve_ivp(f, [0.0, 1], self.initial_state, rtol=1e-5, atol=1e-8)
       solution = sol
       self.plot_graphs(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:], sol.y[3,:])
     elif mode == "rk4":
