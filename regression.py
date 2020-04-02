@@ -86,6 +86,15 @@ def get_regress_general(data):
 	result = Regression(x, y, centres, width, .1, sigmoids=True)
 	return result
 
+def get_regress_ankle_height(data):
+	x = data[:,0]
+	y = data[:,1]
+
+	centres = np.arange(np.min(x) - 0.35, np.max(x) + 0.15, 0.1)
+	width = 0.05
+	result = Regression(x, y, centres, width, .1, sigmoids=True)
+	return result
+
 
 def get_norm_emg(data):
 	percent_gait = data[:,0]
