@@ -131,15 +131,6 @@ def force_length_parallel(lm):
 
     lpe_s = 1.0 # slack length of series element
     
-    # if isinstance(lm,np.ndarray): # return an ndarray if input is an ndarray
-    #     lpe_norm = np.zeros(len(lm))
-    #     for i in range(len(lm)):
-    #         if lm[i] < lpe_s:
-    #             lpe_norm[i] = 0.0
-    #         else: 
-    #             lpe_norm[i] = result.eval(lm[i])
-    # else: # If the input is not an ndarray, then we just return the scalar value 
-    #       # Just checking for floats is good enough for this assignmennt
     if lm.any() < lpe_s:
         lpe_norm = 0.0
     else: 
@@ -366,7 +357,6 @@ def get_muscle_force_length_regression():
 
 force_length_regression = get_muscle_force_length_regression()
 force_velocity_regression = get_muscle_force_velocity_regression()
-# force_length_tendon_regression = get_tendon_force_length_regression(lt)
 
 
 def force_length_muscle(lm):
