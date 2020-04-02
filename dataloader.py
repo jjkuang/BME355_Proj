@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from regression import load_data, get_norm_emg, get_regress_general
+from regression import load_data, get_norm_emg, get_regress_general, \
+get_regress_hip, get_regress_ankle
 
 class DataLoader:
   # Get activation signal a
@@ -13,7 +14,7 @@ class DataLoader:
     # Get ankle angle
     ankle_data = load_data('./data/ankle_vs_gait.csv')
     ankle_data = np.array(ankle_data)
-    self.ankle_function = get_regress_general(ankle_data)
+    self.ankle_function = get_regress_ankle(ankle_data)
     
     # Get knee angle
     knee_data = load_data('./data/knee_vs_gait.csv')
@@ -23,18 +24,18 @@ class DataLoader:
     # Get hip angle
     hip_data = load_data('./data/hip_vs_gait.csv')
     hip_data = np.array(hip_data)
-    self.hip_function = get_regress_general(hip_data)
+    self.hip_function = get_regress_hip(hip_data)
     
     # Get shank velocity
     x = np.arange(0.0,100.0,1.0)
     shank_vel_data = 100*derivative(self.knee_function, x, h=0.001)
     shank_vel_data = np.transpose(np.array([x, shank_vel_data]))
     self.shank_velocity_function = get_regress_general(shank_vel_data)
-    
+
     # Get thigh velocity
     thigh_vel_data = 100*derivative(self.hip_function, x, h=0.001)
     thigh_vel_data = np.transpose(np.array([x, thigh_vel_data]))
-    self.thigh_velocity_function = get_regress_general(thigh_vel_data)
+    self.thigh_velocity_function = get_regress_hip(thigh_vel_data)
     
     
   def activation_function(self):
@@ -86,12 +87,14 @@ if __name__ == '__main__':
   
   plt.figure()
   plt.plot(x, published_data.activation(x))
-  plt.title("EMG")
+  plt.title("Normalized EMG")
+  plt.grid(True)
   plt.show()
   
   plt.figure()
   plt.plot(x, published_data.ankle_angle(x))
   plt.title("Ankle Angle")
+  plt.grid(True)
   plt.show()
   
   plt.figure()
@@ -102,31 +105,38 @@ if __name__ == '__main__':
   plt.figure()
   plt.plot(x, published_data.knee_angle(x))
   plt.title("Knee Angle")
+  plt.grid(True)
   plt.show()
 
   plt.figure()
   plt.plot(x, published_data.shank_velocity(x))
   plt.title("Shank Velocity")
+  plt.grid(True)
   plt.show()
 
   plt.figure()
   plt.plot(x, published_data.shank_acceleration(x))
   plt.title("Shank Acceleration")
+  plt.grid(True)
   plt.show()
 
   plt.figure()
   plt.plot(x, published_data.hip_angle(x))
   plt.title("Hip Angle")
+  plt.grid(True)
   plt.show()
   
   plt.figure()
   plt.plot(x, published_data.thigh_velocity(x))
   plt.title("Thigh Velocity")
+  plt.grid(True)
   plt.show()
 
   plt.figure()
   plt.plot(x, published_data.thigh_acceleration(x))
   plt.title("Thigh Acceleration")
+  plt.grid(True)
   plt.show()  
+
 
   

@@ -13,26 +13,37 @@ from dataloader import DataLoader
 act = []
 solution = None
 deriv = []
+soleus_force = []
+soleus_length = []
+soleus_CE_norm = []
+ta_force = []
+ta_length = []
+ta_CE_norm = []
+
 
 class MotionModel:
-  def __init__(self):
+  def __init__(self, start=0, end=1):
+      self.start = start
+      self.end = end
     
       self.lit_data = DataLoader()
-      frequency, duty_cycle, scaling, non_linearity = 30, 0.99, 1, -1
+      frequency, duty_cycle, scaling, non_linearity = 50, 0.9, 1, -1
       
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
       self.a.get_activation_signal(self.lit_data.activation_function(), shape="monophasic")
-      self.a.plot(0.6,1)
       
       rest_length_soleus = self.soleus_length(20*np.pi/180)
-      rest_length_tibialis = self.tibialis_length(-40*np.pi/180)
+      rest_length_tibialis = self.tibialis_length(-40*np.pi/180) # lower is earlier activation
       print(rest_length_soleus)
       print(rest_length_tibialis)
-      self.soleus = HillTypeMuscle(624, .8658*rest_length_soleus, .1342*rest_length_soleus)
-      self.tibialis = HillTypeMuscle(836.3, .7794*rest_length_tibialis, .2206*rest_length_tibialis)
+      self.soleus = HillTypeMuscle(624, .1342*rest_length_soleus, .8658*rest_length_soleus)
+      self.tibialis = HillTypeMuscle(836.3, .2206*rest_length_tibialis, .7794*rest_length_tibialis)
 
       # theta, velocity, initial CE length of soleus, initial CE length of TA
-      self.initial_state = np.array([-0.24827,-2.78,0.827034,1.050905])
+      self.initial_state = np.array([self.lit_data.ankle_angle(self.start)[0]*np.pi/180,
+                                     self.lit_data.ankle_velocity(self.start)[0]*np.pi/180,
+                                     0.827034,
+                                     1.050905])
 
   def get_global(self,theta, x, y, t):
       
@@ -255,6 +266,12 @@ class MotionModel:
   
       # calculate moments as defined by balance model mechanics 
       tau_s =  soleus_moment_arm * self.soleus.get_force(soleus_length_val, x[2])
+      soleus_force.append(self.soleus.get_force(soleus_length_val, x[2]))
+      soleus_length.append(soleus_length_val)
+      soleus_CE_norm.append(x[2])
+      ta_force.append(self.tibialis.get_force(tibialis_length_val, x[3]))
+      ta_length.append(tibialis_length_val)
+      ta_CE_norm.append(x[3])
       tau_ta = tibialis_moment_arm * self.tibialis.get_force(tibialis_length_val, x[3])
       gravity_moment_val = self.gravity_moment(x[0],t)
       ankle_linear_x_moment = self.ankle_linear_acceleration_moment_x(t,x[0])
@@ -334,7 +351,7 @@ class MotionModel:
       plt.show()
   
       # Ankle trajectory
-      x = np.arange(0.6,1,0.001)
+      x = np.arange(self.start,self.end,0.001)
       true_position = [[],[]]
       for ite in x:
           coord = self.get_global(self.lit_data.ankle_angle(ite)[0]*np.pi/180,0.06674,-0.03581,ite)
@@ -346,14 +363,6 @@ class MotionModel:
           coord = self.get_global(theta[i],0.06674,-0.03581,time[i])
           position[0].append(coord[0])
           position[1].append(coord[1])
-
-      # Toe height vs time
-      gnd_hip = 0.92964  # m
-      toe_height = []
-      for i in range(len(time)):
-          coord = self.get_global(theta[i],0.2218,0,time[i])
-          toe_hip = -coord[1]
-          toe_height.append(gnd_hip - toe_hip)
 
       # Plot vertical position over gait cycle
       plt.figure()
@@ -377,9 +386,24 @@ class MotionModel:
       plt.ylabel("vertical position(m)")
       plt.show()
       
-      # Plot toe height over gait cycle (swing phase to end)
+      # Toe height vs time - Plot toe height over gait cycle (swing phase to end)
+      gnd_hip = 0.92964  # m
+      true_toe_position = []
+      for ite in x:
+          coord = self.get_global(self.lit_data.ankle_angle(ite)[0]*np.pi/180,0.2218,0,ite)
+          true_toe_position.append(gnd_hip + coord[1])
+      
+      toe_height = []
+      for i in range(len(time)):
+          coord = self.get_global(theta[i],0.2218,0,time[i])
+          toe_hip = -coord[1]
+          toe_height.append(gnd_hip - toe_hip)
+      
+      
       plt.figure()
       plt.plot(time,toe_height)
+      plt.plot(x,true_toe_position)
+      plt.legend(('sim', 'real'))
       plt.xlabel("% Gait Cycle")
       plt.ylabel("toe height (m)")
       plt.show()
@@ -397,7 +421,7 @@ class MotionModel:
         return self.dynamics(x, self.soleus, self.tibialis, t)
 
     if mode == "rk45":
-      sol = solve_ivp(f, [0.0, 1], self.initial_state, rtol=1e-5, atol=1e-8)
+      sol = solve_ivp(f, [self.start, self.end], self.initial_state, rtol=1e-5, atol=1e-8)
       solution = sol
       self.plot_graphs(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:], sol.y[3,:])
     elif mode == "rk4":
@@ -405,10 +429,8 @@ class MotionModel:
         for i in range(0):
           time_steps.append(time_steps[i]/2)
 
-        t_start = 0.6 # Starting time
-        t_end = 1 # Ending time
         for time_step in time_steps:
-          times = np.arange(t_start,t_end+time_step,time_step)
+          times = np.arange(self.start,self.end+time_step,time_step)
           sol = []
           x = self.initial_state
           for t in times:
@@ -418,7 +440,7 @@ class MotionModel:
           self.plot_graphs(times, sol[:][0], sol[:][1], sol[:][2], sol[:][3])
 
 if __name__ == '__main__':
-    motion_model = MotionModel()
+    motion_model = MotionModel(0.60,1)
     motion_model.simulate(mode="rk45")
 
    

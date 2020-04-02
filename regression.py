@@ -77,24 +77,52 @@ class Regression():
 		return phi
 
 
-def get_norm_emg(data):
-	percent_gait = data[:,0]
-	intensity = data[:,1]
-
-	centres = np.arange(-10, 110, 5)
-	width = 5
-	result = Regression(percent_gait, intensity, centres, width, .1, sigmoids=True)
-
-	return result
-
-
 def get_regress_general(data):
 	x = data[:,0]
 	y = data[:,1]
 
 	centres = np.arange(np.min(x) - 10, np.max(x) + 10, 5)
-	width = 5
+	width = 5 
 	result = Regression(x, y, centres, width, .1, sigmoids=True)
+	return result
+
+def get_regress_ankle_height(data):
+	x = data[:,0]
+	y = data[:,1]
+
+	centres = np.arange(np.min(x) - 0.35, np.max(x) + 0.15, 0.1)
+	width = 0.05
+	result = Regression(x, y, centres, width, .1, sigmoids=True)
+	return result
+
+
+def get_norm_emg(data):
+	percent_gait = data[:,0]
+	intensity = data[:,1]
+
+	centres = np.arange(-10, 110, 6)
+	width = 5
+	result = Regression(percent_gait, intensity, centres, width, .2, sigmoids=False)
+	return result
+
+
+def get_regress_ankle(data):
+	percent_gait = data[:,0]
+	ankle_angle = data[:,1]
+
+	centres = np.arange(np.min(percent_gait) - 10, np.max(percent_gait) + 10, 5)
+	width = 4
+	result = Regression(percent_gait, ankle_angle, centres, width, .05, sigmoids=True)
+	return result
+
+
+def get_regress_hip(data):
+	percent_gait = data[:,0]
+	hip_angle = data[:,1]
+
+	centres = np.arange(np.min(percent_gait) - 10, np.max(percent_gait) + 10, 4)
+	width = 5
+	result = Regression(percent_gait, hip_angle, centres, width, .08, sigmoids=True)
 	return result
 
 
@@ -103,9 +131,6 @@ if __name__ == '__main__':
 	gait_data = np.array(gait_data)
 	gait_data_regress = get_norm_emg(gait_data)
 
-	x = np.arange(0,100,1)
-	plt.plot(x, gait_data_regress.eval(x))
-	plt.show()
-
-	
-
+	# x = np.arange(0,100,1)
+	# plt.plot(x, gait_data_regress.eval(x))
+	# plt.show()
