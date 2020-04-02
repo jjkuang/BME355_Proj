@@ -95,41 +95,31 @@ def force_length_tendon(lt):
     lt_s = 1.0 # slack length of series element
 
     # Without Regression
-    # if isinstance(lt,np.ndarray): # return an ndarray if input is an ndarray
-    #     norm = np.zeros(len(lt))
-    #     for i in range(len(lt)):
-    #         if lt[i] < lt_s:
-    #             norm[i] = 0.0
-    #         else: 
-    #             norm[i] = 10.0 * (lt[i] - lt_s) + 240.0 * (lt[i] - lt_s)**2
-    #     return norm
-    # else: # If the input is not an ndarray, then we just return the scalar value 
-    #       # Just checking for floats is good enough for this assignmennt
-    #     if lt < lt_s:
-    #         return 0.0
-    #     else: 
-    #         return 10.0 * (lt - lt_s) + 240.0 * (lt - lt_s)**2
+    if isinstance(lt,np.ndarray): # return an ndarray if input is an ndarray
+        norm = np.zeros(len(lt))
+        for i in range(len(lt)):
+            if lt[i] < lt_s:
+                norm[i] = 0.0
+            else: 
+                norm[i] = 10.0 * (lt[i] - lt_s) + 240.0 * (lt[i] - lt_s)**2
+        return norm
+    else: # If the input is not an ndarray, then we just return the scalar value 
+          # Just checking for floats is good enough for this assignmennt
+        if lt < lt_s:
+            return 0.0
+        else: 
+            return 10.0 * (lt - lt_s) + 240.0 * (lt - lt_s)**2
 
 
     # With Regression
-    data = load_data('./data/flcurve_tendon_norm.csv')
-    data = np.array(data)
-
-    length_tendon_norm = data[:,0]
-    force_tendon_norm = data[:,1]
-
-    centres = np.arange(min(length_tendon_norm)-0.05, max(length_tendon_norm)+0.05, 1e-2)
-    width = .01
-    result = Regression(length_tendon_norm, force_tendon_norm, centres, width, .01, sigmoids=False)
-
-    if lt.any() < lt_s:
-        lt_norm = 0.0
-    else:
-        if isinstance(lt, np.ndarray):
-            lt = np.reshape(lt, (len(lt)))
-        lt_norm = result.eval(lt)
+    # if lt.any() < lt_s:
+    #     lt_norm = 0.0
+    # else:
+    #     if isinstance(lt, np.ndarray):
+    #         lt = np.reshape(lt, (len(lt)))
+    #     lt_norm = fl_tendon_regression.eval(lt)
          
-    return lt_norm
+    # return lt_norm
 
 
 def force_length_parallel(lm):
@@ -141,39 +131,29 @@ def force_length_parallel(lm):
     lpe_s = 1.0 # slack length of series element
     
     # Without Regression
-    # if isinstance(lm,np.ndarray):
-    #     norm = np.zeros(len(lm))
-    #     for i in range(len(lm)):
-    #         if lm[i] < lpe_s:
-    #             norm[i] = 0.0
-    #         else:
-    #             norm[i] = (3.0 * (lm[i] - lpe_s)**2) / (.6 + lm[i] - lpe_s)
-    #     return norm
-    # else:
-    #     if lm < lpe_s:
-    #         return 0.0
-    #     else:
-    #         return 3.0 * (lm - lpe_s)**2 / (0.6 + lm - lpe_s)
+    if isinstance(lm,np.ndarray):
+        norm = np.zeros(len(lm))
+        for i in range(len(lm)):
+            if lm[i] < lpe_s:
+                norm[i] = 0.0
+            else:
+                norm[i] = (3.0 * (lm[i] - lpe_s)**2) / (.6 + lm[i] - lpe_s)
+        return norm
+    else:
+        if lm < lpe_s:
+            return 0.0
+        else:
+            return 3.0 * (lm - lpe_s)**2 / (0.6 + lm - lpe_s)
 
     # With Regression
-    data = load_data('./data/fl_curve_passive.csv')
-    data = np.array(data)
+    # if lm.any() < lpe_s:
+    #     lpe_norm = 0.0
+    # else: 
+    #     if isinstance(lm, np.ndarray):
+    #         lm = np.reshape(lm, (len(lm)))
+    #     lpe_norm = fl_pe_regression.eval(lm)
 
-    length_norm = data[:,0]
-    force_norm = data[:,1]
-
-    centres = np.arange(min(length_norm)-0.1, max(length_norm)+0.1, .1)
-    width = .25
-    result = Regression(length_norm, force_norm, centres, width, .01, sigmoids=False)
-
-    if lm.any() < lpe_s:
-        lpe_norm = 0.0
-    else: 
-        if isinstance(lm, np.ndarray):
-            lm = np.reshape(lm, (len(lm)))
-        lpe_norm = result.eval(lm)
-
-    return lpe_norm
+    # return lpe_norm
 
 
 def get_muscle_force_velocity_regression():
@@ -391,8 +371,38 @@ def get_muscle_force_length_regression():
     return result
 
 
+def get_tendon_force_length_regression():
+    data = load_data('./data/flcurve_tendon_norm.csv')
+    data = np.array(data)
+
+    length_tendon_norm = data[:,0]
+    force_tendon_norm = data[:,1]
+
+    centres = np.arange(min(length_tendon_norm)-0.05, max(length_tendon_norm)+0.05, 1e-2)
+    width = .01
+    result = Regression(length_tendon_norm, force_tendon_norm, centres, width, .01, sigmoids=True)
+
+    return result
+
+
+def get_pe_force_length_regression():
+    data = load_data('./data/fl_curve_passive.csv')
+    data = np.array(data)
+
+    length_norm = data[:,0]
+    force_norm = data[:,1]
+
+    centres = np.arange(min(length_norm)-0.1, max(length_norm)+0.1, .1)
+    width = .25
+    result = Regression(length_norm, force_norm, centres, width, .01, sigmoids=True)
+
+    return result
+
+
 force_length_regression = get_muscle_force_length_regression()
 force_velocity_regression = get_muscle_force_velocity_regression()
+fl_tendon_regression = get_tendon_force_length_regression()
+fl_pe_regression = get_pe_force_length_regression()
 
 
 def force_length_muscle(lm):
@@ -434,7 +444,7 @@ def plot_curves():
 
 if __name__ == '__main__':
         
-#    plot_curves() # plot CE,SE,PE force-length curves and CE force-velocity curve
+    plot_curves() # plot CE,SE,PE force-length curves and CE force-velocity curve
     print(get_velocity(1.0,np.array([1.0]),np.array([1.01]))) # calculate velocity given a=1.0,lm=1.0,ls=1.01
 
     # Constants

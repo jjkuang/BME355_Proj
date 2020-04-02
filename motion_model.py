@@ -22,7 +22,7 @@ ta_CE_norm = []
 
 
 class MotionModel:
-  def __init__(self, start=0, end=1, frequency = 50, duty_cycle = 1, scaling = 1, non_linearity = -1, shape_="monophasic"):
+  def __init__(self, start=0, end=1, frequency = 50, duty_cycle = 0.7, scaling = 1, non_linearity = -1, shape_="monophasic"):
       self.start = start
       self.end = end
     
@@ -31,8 +31,8 @@ class MotionModel:
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
       self.a.get_activation_signal(self.lit_data.activation_function(), shape=shape_)
       
-      rest_length_soleus = self.soleus_length(23.7*np.pi/180)*0.85
-      rest_length_tibialis = self.tibialis_length(-37.4*np.pi/180) # lower is earlier activation
+      rest_length_soleus = self.soleus_length(23.7*np.pi/180)*1.15
+      rest_length_tibialis = self.tibialis_length(-37.4*np.pi/180)*0.9275 # lower is earlier activation
       print(rest_length_soleus)
       print(rest_length_tibialis)
       soleus_f0m = 650.02
@@ -270,8 +270,7 @@ class MotionModel:
       # constants
       inertia_ankle = 0.0197
       soleus_moment_arm = .05
-      tibialis_moment_arm = .03
-  
+      tibialis_moment_arm = .03  
   
       # static activations
       activation_s = 0
@@ -309,7 +308,7 @@ class MotionModel:
       # x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment + ankle_linear_y_moment + \
       #       normal_com_a_x_moment + normal_com_a_y_moment)/(inertia_ankle + com_a_terms[0] + com_a_terms[1])
       
-      x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment + ankle_linear_y_moment)/(inertia_ankle) #- com_a_terms[0] + com_a_terms[1])
+      x_1 = (tau_ta - tau_s + gravity_moment_val)/(inertia_ankle) #- com_a_terms[0] + com_a_terms[1])
   
       
       # derivative of normalized CE lengths is normalized velocity
@@ -431,7 +430,6 @@ class MotionModel:
           toe_hip = -coord[1]
           toe_height.append(gnd_hip - toe_hip)
 
-
       plt.figure()
       plt.plot(time,toe_height)
       plt.plot(x,true_toe_position)
@@ -439,19 +437,7 @@ class MotionModel:
       plt.xlabel("% Gait Cycle")
       plt.ylabel("toe height (m)")
       plt.show()
-      toe_height = []
-      for i in range(len(time)):
-          coord = self.get_global(theta[i],0.2218,0,time[i])
-          toe_height.append(gnd_hip + coord[1])
       
-      
-      plt.figure()
-      plt.plot(time,toe_height)
-      plt.plot(x,true_toe_position)
-      plt.legend(('sim', 'real'))
-      plt.xlabel("% Gait Cycle")
-      plt.ylabel("toe height (m)")
-      plt.show()
 
   def rk4_update(self,f,t,time_step,x):
     s_1 = f(t, x)
