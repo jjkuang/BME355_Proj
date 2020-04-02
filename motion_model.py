@@ -28,8 +28,8 @@ class MotionModel:
       rest_length_tibialis = self.tibialis_length(-40*np.pi/180)
       print(rest_length_soleus)
       print(rest_length_tibialis)
-      self.soleus = HillTypeMuscle(624, .8658*rest_length_soleus, .1342*rest_length_soleus)
-      self.tibialis = HillTypeMuscle(836.3, .7794*rest_length_tibialis, .2206*rest_length_tibialis)
+      self.soleus = HillTypeMuscle(624, .1342*rest_length_soleus, .8658*rest_length_soleus)
+      self.tibialis = HillTypeMuscle(836.3, .2206*rest_length_tibialis, .7794*rest_length_tibialis)
 
       # theta, velocity, initial CE length of soleus, initial CE length of TA
       self.initial_state = np.array([-0.24827,-2.78,0.827034,1.050905])
