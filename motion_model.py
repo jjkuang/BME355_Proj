@@ -22,15 +22,14 @@ ta_CE_norm = []
 
 
 class MotionModel:
-  def __init__(self, start=0, end=1):
+  def __init__(self, start=0, end=1, frequency = 50, duty_cycle = 0.9, scaling = 1, non_linearity = -1, shape_="monophasic"):
       self.start = start
       self.end = end
     
       self.lit_data = DataLoader()
-      frequency, duty_cycle, scaling, non_linearity = 50, 0.9, 1, -1
-      
+            
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
-      self.a.get_activation_signal(self.lit_data.activation_function(), shape="monophasic")
+      self.a.get_activation_signal(self.lit_data.activation_function(), shape=shape_)
       
       rest_length_soleus = self.soleus_length(20*np.pi/180)
       rest_length_tibialis = self.tibialis_length(-40*np.pi/180) # lower is earlier activation
@@ -44,6 +43,15 @@ class MotionModel:
                                      self.lit_data.ankle_velocity(self.start)[0]*np.pi/180,
                                      0.827034,
                                      1.050905])
+      self.time = None
+      self.x1 = None
+      self.x2 = None
+      self.x3 = None
+      self.x4 = None
+    
+  def set_activation(self, frequency, duty_cycle, scaling, non_linearity, shape_):
+      self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
+      self.a.get_activation_signal(self.lit_data.activation_function(), shape=shape_)
 
   def get_global(self,theta, x, y, t):
       
@@ -295,7 +303,13 @@ class MotionModel:
       deriv.append([x_0, x_1, x_2[0], x_3[0]])
       return np.array([x_0, x_1, x_2[0], x_3[0]])
 
-  def plot_graphs(self, time, theta, angular_vel, soleus_norm_length_muscle, tibialis_norm_length_muscle):
+  def plot_graphs(self):
+      time = self.time
+      theta = self.x1
+      angular_vel = self.x2
+      soleus_norm_length_muscle = self.x3
+      tibialis_norm_length_muscle = self.x4
+    
       # Plot activation
       plt.figure()
       plt.plot(act)
@@ -396,8 +410,7 @@ class MotionModel:
       toe_height = []
       for i in range(len(time)):
           coord = self.get_global(theta[i],0.2218,0,time[i])
-          toe_hip = -coord[1]
-          toe_height.append(gnd_hip - toe_hip)
+          toe_height.append(gnd_hip + coord[1])
       
       
       plt.figure()
@@ -423,7 +436,11 @@ class MotionModel:
     if mode == "rk45":
       sol = solve_ivp(f, [self.start, self.end], self.initial_state, rtol=1e-5, atol=1e-8)
       solution = sol
-      self.plot_graphs(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:], sol.y[3,:])
+      self.time = sol.t
+      self.x1 = sol.y[0,:]
+      self.x2 = sol.y[1,:]
+      self.x3 = sol.y[2,:]
+      self.x4 = sol.y[3,:]
     elif mode == "rk4":
         time_steps = [0.001]
         for i in range(0):
@@ -437,12 +454,45 @@ class MotionModel:
               sol.append(x)
               x = self.rk4_update(f,t, time_step,  x)
           sol = np.transpose(sol)
-          self.plot_graphs(times, sol[:][0], sol[:][1], sol[:][2], sol[:][3])
+          self.time = times
+          self.x1 = sol[:][0]
+          self.x2 = sol[:][1]
+          self.x3 = sol[:][2]
+          self.x4 = sol[:][3]
+          
+  def compare_ankle_angle(self):
+    target = self.lit_data.ankle_angle(self.time)*np.pi/180
+    return np.sqrt(np.mean((target-self.x1)**2))
+  
+  def compare_toe_height(self):
+    gnd_hip = 0.92964 - (-0.009488720645956072)  # m 
+    target_toe_position = []  
+    predicted_toe_position = []
+    
+    for i in range(len(self.time)):
+        pred_coord = self.get_global(self.x1[i],0.2218,0,self.time[i])
+        predicted_toe_position.append(gnd_hip + pred_coord[1])
+        
+        targ_coord = self.get_global(self.lit_data.ankle_angle(self.time[i])[0]*np.pi/180,0.2218,0,self.time[i])
+        target_toe_position.append(gnd_hip + targ_coord[1])
+        
+    below_zero = False 
+    predicted_toe_position = np.array(predicted_toe_position)
+    find_below = np.argwhere(predicted_toe_position < 0)
+    if np.size(find_below) > 0:
+      below_zero = True
+    
+    rmse = np.sqrt(np.mean((target_toe_position-predicted_toe_position)**2))
+    return [below_zero, rmse]
+
 
 if __name__ == '__main__':
-    motion_model = MotionModel(0.60,1)
+    motion_model = MotionModel(0.58,1)
     motion_model.simulate(mode="rk45")
-
-   
-
-
+    print(motion_model.compare_ankle_angle())
+    print(motion_model.compare_toe_height())
+    
+    
+    
+    
+    
