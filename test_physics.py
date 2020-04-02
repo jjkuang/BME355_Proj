@@ -21,10 +21,10 @@ def verify_lin_accel(t_start=0, t_end=1):
       position[1].append(coord[1])
       
   
-  y = position[1]
+  y = position[0]
   y = np.array([x, y])
   y_function = get_regress_ankle_height(np.transpose(y))
-  plt.plot(x, position[1])
+  plt.plot(x, position[0])
   plt.plot(x, y_function.eval(x))
   plt.show()
   

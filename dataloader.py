@@ -60,13 +60,13 @@ class DataLoader:
     return 100*derivative(self.knee_function, x * 100, h=0.001)
   
   def shank_acceleration(self, x):
-    return derivative(self.shank_velocity_function, x * 100, h=0.001)
+    return 100*derivative(self.shank_velocity_function, x * 100, h=0.001)
   
   def thigh_velocity(self, x):
     return 100*derivative(self.hip_function, x * 100, h=0.001)
   
   def thigh_acceleration(self, x):
-    return derivative(self.thigh_velocity_function, x * 100, h=0.001)
+    return 100*derivative(self.thigh_velocity_function, x * 100, h=0.001)
   
   
 def derivative(f,a,method='central',h=0.01):

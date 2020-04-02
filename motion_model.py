@@ -115,29 +115,45 @@ class MotionModel:
       k_norm_mag = (t_omega**2) * thigh_len
       k_norm_dir = np.pi/2 - abs(hip_theta)
 
-      k_norm = k_norm_mag*np.array([k_norm_dir/abs(k_norm_dir) * abs(np.cos(k_norm_dir)),
+      k_norm = k_norm_mag*np.array([-1*hip_theta/abs(hip_theta) * abs(np.cos(k_norm_dir)),
                                      abs(np.sin(k_norm_dir))])
 
       k_tan_mag = abs(t_alpha) * thigh_len
-      k_tan_dir = hip_theta
+      k_tan_dir = abs(hip_theta)
 
-      k_tan = k_tan_mag*np.array([-t_alpha/abs(t_alpha) * abs(np.cos(k_tan_dir)),
+      k_tan = k_tan_mag*np.array([t_alpha/abs(t_alpha) * abs(np.cos(k_tan_dir)),
                                    t_alpha/abs(t_alpha)*hip_theta/abs(hip_theta) * abs(np.sin(k_tan_dir))])
 
       ak_norm_mag = (s_omega**2) * shank_len
-      ak_norm_dir = np.pi/2 + abs(hip_theta) - abs(knee_theta)
+      alpha = (np.pi/2 - abs(hip_theta))
 
-      ak_norm = ak_norm_mag * np.array([(np.pi/2-ak_norm_dir)/abs(np.pi/2-ak_norm_dir) * abs(np.cos(ak_norm_dir)),
+      if(hip_theta > 0 ):
+          if(np.pi - alpha - abs(knee_theta) > 90):
+              ak_norm_dir = np.pi - (np.pi - alpha - abs(knee_theta))
+              direction = -1
+          else:
+              ak_norm_dir = np.pi - (np.pi/2 - abs(hip_theta)) - abs(knee_theta)
+              direction = 1
+      else:
+          if(abs(knee_theta) < alpha):
+              ak_norm_dir = alpha - abs(knee_theta)
+              direction = 1
+          else:
+              print("disaster")
+
+      ak_norm = ak_norm_mag * np.array([direction * abs(np.cos(ak_norm_dir)),
                                abs(np.sin(ak_norm_dir))])
 
       ak_tan_mag = abs(s_alpha) * shank_len
-      ak_tan_dir = -abs(hip_theta) + abs(knee_theta)
+      ak_tan_dir = np.pi/2 - abs(ak_norm_dir)
 
-      ak_tan = ak_tan_mag * np.array([s_alpha/abs(s_alpha) * abs(np.cos(ak_tan_dir)),
-                             (s_alpha/abs(s_alpha)) * (np.pi/2-ak_tan_dir)/abs(np.pi/2-ak_tan_dir) * abs(np.sin(ak_tan_dir))])
+      ak_tan = ak_tan_mag * np.array([-1*s_alpha/abs(s_alpha) * abs(np.cos(ak_tan_dir)),
+                             (s_alpha/abs(s_alpha)) * direction * abs(np.sin(ak_tan_dir))])
 
       a_acceleration = [k_norm[0] + k_tan[0] + ak_norm[0] + ak_tan[0],
                         k_norm[1] + k_tan[1] + ak_norm[1] + ak_tan[1]]
+
+      print(t, k_norm[1], k_tan[1], ak_norm[1], ak_tan[1])
 
       return a_acceleration
 
@@ -145,7 +161,7 @@ class MotionModel:
       """
       :param theta: ankle angle
       :param t: time in gait cycle
-      :param f_omega: anglualr velocity of ankle
+      :param f_omega: angular velocity of ankle
       :return: acceleration of COM
       """
       ankle = self.get_global(theta, 0, 0, t)
@@ -297,9 +313,9 @@ class MotionModel:
 
   def plot_graphs(self, time, theta, angular_vel, soleus_norm_length_muscle, tibialis_norm_length_muscle):
       # Plot activation
-      plt.figure()
-      plt.plot(act)
-      plt.show()
+      # plt.figure()
+      #       # plt.plot(act)
+      #       # plt.show()
   
       # Plot moments
       soleus_moment_arm = .05
@@ -321,34 +337,35 @@ class MotionModel:
           normal_com_a_y_moment.append(self.com_a_moment_norm_y(t,w,th))
 
       plt.figure()
-      plt.plot(time, soleus_moment, 'r')
-      plt.plot(time, tibialis_moment, 'g')
-      plt.plot(time, grav_mom, 'k')
+      # plt.plot(time, soleus_moment, 'r')
+      # plt.plot(time, tibialis_moment, 'g')
+      # plt.plot(time, grav_mom, 'k')
       plt.plot(time, ankle_linear_x_moment)
-      plt.plot(time, ankle_linear_y_moment)
-      plt.plot(time, normal_com_a_x_moment)
-      plt.plot(time, normal_com_a_y_moment)
+      # plt.plot(time, ankle_linear_y_moment)
+      # plt.plot(time, normal_com_a_x_moment)
+      # plt.plot(time, normal_com_a_y_moment)
       plt.legend(('soleus', 'tibialis', 'gravity','ankle_linear_x','ankle_linear_y','normal_com_a_x','normal_com_a_y'))
       plt.xlabel('Time (s)')
-      plt.ylabel('Torques (Nm)')
+      #plt.ylabel('Torques (Nm)')
+      plt.ylabel('Acceleration (m/s^2)')
       plt.tight_layout()
       plt.show()
       
       # Muscle lengths
-      plt.figure()
-      plt.plot(time, soleus_norm_length_muscle)
-      plt.plot(time, tibialis_norm_length_muscle)
-      plt.legend(('norm soleus length', 'norm ta length'))
-      plt.show()
+      # plt.figure()
+      # plt.plot(time, soleus_norm_length_muscle)
+      # plt.plot(time, tibialis_norm_length_muscle)
+      # plt.legend(('norm soleus length', 'norm ta length'))
+      # plt.show()
 
       # Angle
-      plt.figure()
-      plt.plot(time,theta)
-      plt.plot(time, self.lit_data.ankle_angle(time)*np.pi/180)
-      plt.legend(('sim', 'real'))
-      plt.ylabel('Ankle angle (rad)')
-      plt.xlabel('Time (s)')
-      plt.show()
+      # plt.figure()
+      # plt.plot(time,theta)
+      # plt.plot(time, self.lit_data.ankle_angle(time)*np.pi/180)
+      # plt.legend(('sim', 'real'))
+      # plt.ylabel('Ankle angle (rad)')
+      # plt.xlabel('Time (s)')
+      # plt.show()
   
       # Ankle trajectory
       x = np.arange(self.start,self.end,0.001)
@@ -365,48 +382,48 @@ class MotionModel:
           position[1].append(coord[1])
 
       # Plot vertical position over gait cycle
-      plt.figure()
-      plt.plot(time,position[1])
-      plt.plot(x,true_position[1])
-      plt.legend(('sim', 'real'))
-      plt.xlabel("% Gait Cycle")
-      plt.ylabel("vertical position over time (m)")
-      plt.show()
+      # plt.figure()
+      # plt.plot(time,position[1])
+      # plt.plot(x,true_position[1])
+      # plt.legend(('sim', 'real'))
+      # plt.xlabel("% Gait Cycle")
+      # plt.ylabel("vertical position over time (m)")
+      # plt.show()
+      #
+      # # Plot vertical position of COM to horizontal posn of COM
+      # plt.figure()
+      # plt.plot(position[0], position[1])
+      # plt.scatter(position[0][0], position[1][0], marker='x', color='r')
+      # plt.text(position[0][0], position[1][0], 'start')
+      # plt.scatter(position[0][-1], position[1][-1], marker='x', color='g')
+      # plt.text(position[0][-1], position[1][-1], 'end')
+      # plt.plot(true_position[0], true_position[1])
+      # plt.legend(('sim', 'real'))
+      # plt.xlabel("horizontal position (m)")
+      # plt.ylabel("vertical position(m)")
+      # plt.show()
       
-      # Plot vertical position of COM to horizontal posn of COM
-      plt.figure()
-      plt.plot(position[0], position[1])
-      plt.scatter(position[0][0], position[1][0], marker='x', color='r')
-      plt.text(position[0][0], position[1][0], 'start')
-      plt.scatter(position[0][-1], position[1][-1], marker='x', color='g')
-      plt.text(position[0][-1], position[1][-1], 'end')
-      plt.plot(true_position[0], true_position[1])
-      plt.legend(('sim', 'real'))
-      plt.xlabel("horizontal position (m)")
-      plt.ylabel("vertical position(m)")
-      plt.show()
-      
-      # Toe height vs time - Plot toe height over gait cycle (swing phase to end)
-      gnd_hip = 0.92964  # m
-      true_toe_position = []
-      for ite in x:
-          coord = self.get_global(self.lit_data.ankle_angle(ite)[0]*np.pi/180,0.2218,0,ite)
-          true_toe_position.append(gnd_hip + coord[1])
-      
-      toe_height = []
-      for i in range(len(time)):
-          coord = self.get_global(theta[i],0.2218,0,time[i])
-          toe_hip = -coord[1]
-          toe_height.append(gnd_hip - toe_hip)
-      
-      
-      plt.figure()
-      plt.plot(time,toe_height)
-      plt.plot(x,true_toe_position)
-      plt.legend(('sim', 'real'))
-      plt.xlabel("% Gait Cycle")
-      plt.ylabel("toe height (m)")
-      plt.show()
+      # # Toe height vs time - Plot toe height over gait cycle (swing phase to end)
+      # gnd_hip = 0.92964  # m
+      # true_toe_position = []
+      # for ite in x:
+      #     coord = self.get_global(self.lit_data.ankle_angle(ite)[0]*np.pi/180,0.2218,0,ite)
+      #     true_toe_position.append(gnd_hip + coord[1])
+      #
+      # toe_height = []
+      # for i in range(len(time)):
+      #     coord = self.get_global(theta[i],0.2218,0,time[i])
+      #     toe_hip = -coord[1]
+      #     toe_height.append(gnd_hip - toe_hip)
+      #
+      #
+      # plt.figure()
+      # plt.plot(time,toe_height)
+      # plt.plot(x,true_toe_position)
+      # plt.legend(('sim', 'real'))
+      # plt.xlabel("% Gait Cycle")
+      # plt.ylabel("toe height (m)")
+      # plt.show()
 
   def rk4_update(self,f,t,time_step,x):
     s_1 = f(t, x)
@@ -440,7 +457,7 @@ class MotionModel:
           self.plot_graphs(times, sol[:][0], sol[:][1], sol[:][2], sol[:][3])
 
 if __name__ == '__main__':
-    motion_model = MotionModel(0.60,1)
+    motion_model = MotionModel(0,1)
     motion_model.simulate(mode="rk45")
 
    
