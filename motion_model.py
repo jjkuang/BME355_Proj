@@ -32,12 +32,13 @@ class MotionModel:
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
       self.a.get_activation_signal(self.lit_data.activation_function(), shape="monophasic")
       
-      rest_length_soleus = self.soleus_length(20*np.pi/180)
-      rest_length_tibialis = self.tibialis_length(-40*np.pi/180) # lower is earlier activation
+      rest_length_soleus = self.soleus_length(23.7*np.pi/180)
+      rest_length_tibialis = self.tibialis_length(-37.4*np.pi/180) # lower is earlier activation
       print(rest_length_soleus)
       print(rest_length_tibialis)
-      self.soleus = HillTypeMuscle(624, .1342*rest_length_soleus, .8658*rest_length_soleus)
-      self.tibialis = HillTypeMuscle(836.3, .2206*rest_length_tibialis, .7794*rest_length_tibialis)
+      soleus_f0m = 650.02
+      self.soleus = HillTypeMuscle(soleus_f0m, .1342*rest_length_soleus, .8658*rest_length_soleus)
+      self.tibialis = HillTypeMuscle(605.3465, .2206*rest_length_tibialis, .7794*rest_length_tibialis)
 
       # theta, velocity, initial CE length of soleus, initial CE length of TA
       self.initial_state = np.array([self.lit_data.ankle_angle(self.start)[0]*np.pi/180,
