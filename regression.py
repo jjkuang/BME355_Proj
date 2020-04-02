@@ -92,7 +92,7 @@ def get_regress_ankle_height(data):
 
 	centres = np.arange(np.min(x) - 0.35, np.max(x) + 0.15, 0.1)
 	width = 0.05
-	result = Regression(x, y, centres, width, .1, sigmoids=True)
+	result = Regression(x, y, centres, width, 0.1, sigmoids=True)
 	return result
 
 

@@ -29,7 +29,7 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   
   position = [[],[]]
   for ite in x:
-      coord = motion_model.get_global(ankle_data.eval(ite*100)[0]*np.pi/180,0.06674,-0.03581,ite)
+      coord = motion_model.get_global(ankle_data.eval(ite*100)[0]*np.pi/180,0.06674,-0.03581,ite) #gets global coordinate of ankle
       position[0].append(coord[0])
       position[1].append(coord[1])
   
