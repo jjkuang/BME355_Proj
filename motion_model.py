@@ -22,7 +22,7 @@ ta_CE_norm = []
 
 
 class MotionModel:
-  def __init__(self, start=0, end=1, frequency = 50, duty_cycle = 0.9, scaling = 1, non_linearity = -1, shape_="monophasic"):
+  def __init__(self, start=0, end=1, frequency = 50, duty_cycle = 1, scaling = 1, non_linearity = -1, shape_="monophasic"):
       self.start = start
       self.end = end
     
@@ -31,7 +31,7 @@ class MotionModel:
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
       self.a.get_activation_signal(self.lit_data.activation_function(), shape=shape_)
       
-      rest_length_soleus = self.soleus_length(23.7*np.pi/180)
+      rest_length_soleus = self.soleus_length(23.7*np.pi/180)*0.85
       rest_length_tibialis = self.tibialis_length(-37.4*np.pi/180) # lower is earlier activation
       print(rest_length_soleus)
       print(rest_length_tibialis)
@@ -162,7 +162,7 @@ class MotionModel:
       a_acceleration = [k_norm[0] + k_tan[0] + ak_norm[0] + ak_tan[0],
                         k_norm[1] + k_tan[1] + ak_norm[1] + ak_tan[1]]
 
-      print(t, k_norm[1], k_tan[1], ak_norm[1], ak_tan[1])
+      # print(t, k_norm[1], k_tan[1], ak_norm[1], ak_tan[1])
 
       return a_acceleration
 
@@ -306,10 +306,10 @@ class MotionModel:
       com_a_terms = self.solve_com_a_tan(t,x[0])
 
       # derivative of angular velocity is angular acceleration
-#      x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment + ankle_linear_y_moment + \
-#             normal_com_a_x_moment + normal_com_a_y_moment)/(inertia_ankle + com_a_terms[0] + com_a_terms[1])
+      # x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment + ankle_linear_y_moment + \
+      #       normal_com_a_x_moment + normal_com_a_y_moment)/(inertia_ankle + com_a_terms[0] + com_a_terms[1])
       
-      x_1 = (tau_ta - tau_s + gravity_moment_val)/(inertia_ankle) #- com_a_terms[0] + com_a_terms[1])
+      x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment + ankle_linear_y_moment)/(inertia_ankle) #- com_a_terms[0] + com_a_terms[1])
   
       
       # derivative of normalized CE lengths is normalized velocity
@@ -348,8 +348,8 @@ class MotionModel:
           grav_mom.append(self.gravity_moment(th,t))
           ankle_linear_x_moment.append(self.ankle_linear_acceleration_moment_x(t,th))
           ankle_linear_y_moment.append(self.ankle_linear_acceleration_moment_y(t,th))
-          normal_com_a_x_moment.append(self.com_a_moment_norm_x(t,w,th))
-          normal_com_a_y_moment.append(self.com_a_moment_norm_y(t,w,th))
+          # normal_com_a_x_moment.append(self.com_a_moment_norm_x(t,w,th))
+          # normal_com_a_y_moment.append(self.com_a_moment_norm_y(t,w,th))
 
       plt.figure()
       plt.plot(time, soleus_moment, 'r')
@@ -357,9 +357,9 @@ class MotionModel:
       plt.plot(time, grav_mom, 'k')
       plt.plot(time, ankle_linear_x_moment)
       plt.plot(time, ankle_linear_y_moment)
-      plt.plot(time, normal_com_a_x_moment)
-      plt.plot(time, normal_com_a_y_moment)
-      plt.legend(('soleus', 'tibialis', 'gravity','ankle_linear_x','ankle_linear_y','normal_com_a_x','normal_com_a_y'))
+      # plt.plot(time, normal_com_a_x_moment)
+      # plt.plot(time, normal_com_a_y_moment)
+      plt.legend(('soleus', 'tibialis', 'gravity','ankle_linear_x','ankle_linear_y'))
       plt.xlabel('Time (s)')
       plt.ylabel('Torques (Nm)')
      # plt.ylabel('Acceleration (m/s^2)')
@@ -491,6 +491,8 @@ class MotionModel:
           self.x2 = sol[:][1]
           self.x3 = sol[:][2]
           self.x4 = sol[:][3]
+
+    self.plot_graphs()
           
   def compare_ankle_angle(self):
     target = self.lit_data.ankle_angle(self.time)*np.pi/180
