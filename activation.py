@@ -101,6 +101,7 @@ if __name__ == '__main__':
 
   # Plot actual EMG data
   emg_data = np.transpose(emg_data)
+  plt.figure()
   plt.plot(emg_data[0], emg_data[1])
   plt.xlabel("% Gait Cycle")
   plt.ylabel("Normalized Activation")
@@ -111,9 +112,10 @@ if __name__ == '__main__':
   plt.show()
 
   # Plot Generated FES Signal
-  frequency, duty_cycle, scaling, non_linearity = 35, 0.5, 1.0, -1
+  frequency, duty_cycle, scaling, non_linearity = 35, 0.75, 1.0, -1
   a = Activation(frequency, duty_cycle, scaling, non_linearity)
   a.get_activation_signal(emg_data_regress, shape="monophasic")
+  plt.figure()
   plt.xlabel("% Gait Cycle")
   plt.ylabel("Normalized Activation")
   plt.title("Generated FES Activation Signal Over % Gait Cycle")
