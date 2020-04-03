@@ -47,7 +47,7 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   plt.legend(('Raw Data', 'Computed Trajectory'))
   plt.xlabel("% Gait Cycle")
   plt.ylabel("Horizontal Position (m)")
-  plt.title("Horizontal Position of the Ankle Centroid over the Gait Cycle")
+  plt.title("Horizontal Position of the COM over the Gait Cycle")
   plt.show()
   
   # Plot global vertical of centroid
@@ -57,7 +57,7 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   plt.legend(('Raw Data', 'Computed Trajectory'))
   plt.xlabel("% Gait Cycle")
   plt.ylabel("Vertical Position (m)")
-  plt.title("Vertical Position of the Ankle Centroid over the Gait Cycle")
+  plt.title("Vertical Position of the COM over the Gait Cycle")
   plt.show()
   
   # Plot phase portraits of centroid
