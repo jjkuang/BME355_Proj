@@ -112,15 +112,22 @@ if __name__ == '__main__':
   plt.show()
 
   # Plot Generated FES Signal
-  frequency, duty_cycle, scaling, non_linearity = 35, 0.75, 1.0, -1
+  frequency, duty_cycle, scaling, non_linearity = 50, 0.25, 1.0, -1
   a = Activation(frequency, duty_cycle, scaling, non_linearity)
   a.get_activation_signal(emg_data_regress, shape="monophasic")
-  plt.figure()
-  plt.xlabel("% Gait Cycle")
-  plt.ylabel("Normalized Activation")
-  plt.title("Generated FES Activation Signal Over % Gait Cycle")
-  a.plot()
+#  plt.figure()
+#  plt.xlabel("% Gait Cycle")
+#  plt.ylabel("Normalized Activation")
+#  plt.title("Generated FES Activation Signal Over % Gait Cycle")
+  print(a.get_fatigue())
   
+  a1 = Activation(50, 0.5, 1, -1)
+  a1.get_activation_signal(emg_data_regress, shape="monophasic")
+  print(a1.get_fatigue())
+
+  a2 = Activation(50, 0.75, 1, non_linearity)
+  a2.get_activation_signal(emg_data_regress, shape="monophasic")
+  print(a2.get_fatigue())
 #  dutys = np.arange(0,1,0.05)
 #  freqs = np.arange(20,50,1)
 #  fatigue = []
