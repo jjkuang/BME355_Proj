@@ -389,7 +389,7 @@ class MotionModel:
       plt.show()
   
       # Toe height vs time - Plot toe height over gait cycle (swing phase to end)
-      gnd_hip = 0.92964 - (-0.009488720645956072) + 0.005  # m
+      gnd_hip = 0.92964 - (-0.009488720645956072) + 0.001  # m
       x = np.arange(self.start,self.end,.01)
       true_position = [[],[]]
       for ite in x:
@@ -495,7 +495,7 @@ class MotionModel:
   
   
   def compare_toe_height(self):
-    gnd_hip = 0.92964 - (-0.009488720645956072) + 0.005 # m 
+    gnd_hip = 0.92964 - (-0.009488720645956072) + 0.001 # m 
     target_toe_position = []  
     predicted_toe_position = []
     
@@ -519,10 +519,11 @@ class MotionModel:
 if __name__ == '__main__':
     motion_model = MotionModel( start=0.58, end=1, frequency = 50, duty_cycle = 0.4, scaling = 1, non_linearity = -1, shape_="monophasic")
     motion_model.simulate(mode="rk45")
+    print(motion_model.compare_toe_height())
     
-    
-    motion_model_2 = MotionModel( start=0.58, end=1, frequency = 50, duty_cycle = 0, scaling = 1, non_linearity = -1, shape_="monophasic")
+    motion_model_2 = MotionModel(start=0.58, end=1, frequency =2, duty_cycle = 0, scaling = 1, non_linearity = -1, shape_="monophasic")
     motion_model_2.simulate(mode="rk45")
+    print(motion_model_2.compare_toe_height())
     
     plt.figure()
     motion_model.plot_toe_height()
