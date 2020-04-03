@@ -435,10 +435,12 @@ def plot_curves():
     plt.legend(('CE', 'PE', 'SE'))
     plt.xlabel('Normalized length')
     plt.ylabel('Force scale factor')
+    plt.title('Force Scale Factor over Normalized Lengths')
     plt.subplot(2, 1, 2)
     plt.plot(vm, force_velocity_muscle(vm), 'k')
     plt.xlabel('Normalized muscle velocity')
     plt.ylabel('Force Scale factor')
+    plt.title("Force Scale Factor over Normalized Velocity")
     plt.tight_layout()
     plt.show()
 
@@ -448,10 +450,10 @@ if __name__ == '__main__':
     print(get_velocity(1.0,np.array([1.0]),np.array([1.01]))) # calculate velocity given a=1.0,lm=1.0,ls=1.01
 
     # Constants
-    resting_muscle_length = .3
-    resting_tendon_length = .1
-    max_isometric_force = 100.0
-    total_length = resting_muscle_length + resting_tendon_length
+    max_isometric_force = 605.0
+    total_length = 0.44479194718764087
+    resting_muscle_length = .25*total_length
+    resting_tendon_length = .75*total_length
 
     emg_data = load_data('./data/ta_vs_gait.csv')
     emg_data = np.array(emg_data)
@@ -459,7 +461,7 @@ if __name__ == '__main__':
     
     frequency, duty_cycle, scaling, non_linearity = 35, 0.5, 1, -1
     a = Activation(frequency, duty_cycle, scaling, non_linearity)
-    a.get_activation_signal(emg_data_regress, shape="halfsin")
+    a.get_activation_signal(emg_data_regress, shape="monophasic")
     
     # Create an HillTypeMuscle using the given constants
     muscle = HillTypeMuscle(max_isometric_force, resting_muscle_length, resting_tendon_length)
@@ -467,21 +469,25 @@ if __name__ == '__main__':
     # Dynamic equation
     def f(t, x):
         normalized_tendon_length = muscle.norm_tendon_length(total_length,x)
-        return get_velocity(a.get_amp(t), np.array([x]), np.array([normalized_tendon_length])) 
+        temp = get_velocity(a.get_amp(t/100), np.array([x]), np.array([normalized_tendon_length])) 
+        return temp
+        # return 100*get_velocity(0, np.array([x]), np.array([normalized_tendon_length])) 
 
     # Simulate using rk45
-    sol = solve_ivp(f, [0.6, 1], np.array([1.0]), max_step=.01, rtol=1e-5, atol=1e-8)
-    a.plot()
+    sol = solve_ivp(f, [58, 100], np.array([1.0]), max_step=1, rtol=1e-5, atol=1e-8)
+
     # Plot length and force over time
     plt.figure()
     plt.subplot(2,1,1)
     plt.plot(sol.t, sol.y.T*resting_muscle_length)
-    plt.xlabel('Time (s)')
+    plt.xlabel('% Gait Cycle')
     plt.ylabel('CE length (m)')
+    plt.title("CE Length over Time with FES Activation (58% to 100% of Gait Cycle)")
     plt.subplot(2,1,2)
     plt.plot(sol.t, muscle.get_force(total_length,sol.y.T))
-    plt.xlabel('Time (s)')
+    plt.xlabel('% Gait Cycle')
     plt.ylabel('Tension (N)')
+    plt.title("Tension over Time with FES Activation (58% to 100% of Gait Cycle)")
     plt.tight_layout()
     plt.show()
 

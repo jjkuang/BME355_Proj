@@ -25,7 +25,7 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   ankle_hor[0] = ankle_hor[0]/5
   ankle_hor[1] = ankle_hor[1]/1000
 
-  x = np.arange(t_start,t_end,0.001)
+  x = np.arange(t_start,t_end,.01)
   
   position = [[],[]]
   for ite in x:
@@ -35,45 +35,49 @@ def verify_rotation_matrices(t_start=0, t_end=1):
   
   # Plot ankle from literature 
   plt.figure()
-  plt.plot(x, ankle_data.eval(x*100)*np.pi/180)
+  plt.plot(x*100, ankle_data.eval(x*100)*np.pi/180)
   plt.xlabel("% Gait Cycle")
   plt.ylabel("Ankle Angle Literature (rad)")
   plt.show()
   
   # Plot global horizontal of centroid
   plt.figure()
-  plt.plot(x,position[0])
-  plt.plot(ankle_hor[0], ankle_hor[1])
-  plt.legend(('from python', 'from solidworks'))
+  plt.plot(ankle_hor[0][:-5]*100, ankle_hor[1][:-5])
+  plt.plot(x*100,position[0], '--')
+  plt.legend(('Raw Data', 'Computed Trajectory'))
   plt.xlabel("% Gait Cycle")
-  plt.ylabel("horizontal position over time (m)")
+  plt.ylabel("Horizontal Position (m)")
+  plt.title("Horizontal Position of the Ankle Centroid over the Gait Cycle")
   plt.show()
   
   # Plot global vertical of centroid
   plt.figure()
-  plt.plot(x,position[1])
-  plt.plot(ankle_height[0], ankle_height[1])
-  plt.legend(('from python', 'from solidworks'))
+  plt.plot(ankle_height[0][:-5]*100, ankle_height[1][:-5])
+  plt.plot(x*100,position[1], '--')
+  plt.legend(('Raw Data', 'Computed Trajectory'))
   plt.xlabel("% Gait Cycle")
-  plt.ylabel("vertical position over time (m)")
+  plt.ylabel("Vertical Position (m)")
+  plt.title("Vertical Position of the Ankle Centroid over the Gait Cycle")
   plt.show()
   
   # Plot phase portraits of centroid
   plt.figure()
-  plt.plot(position[0], position[1])
-  plt.scatter(position[0][0], position[1][0], marker='x', color='r')
-  plt.text(position[0][0], position[1][0], 'start')
-  plt.scatter(position[0][-1], position[1][-1], marker='x', color='g')
-  plt.text(position[0][-1], position[1][-1], 'end')
+  plt.plot(ankle_hor[1][:-5], ankle_height[1][:-5])
+
+  plt.plot(position[0], position[1], '--')
+  # plt.scatter(position[0][0], position[1][0], marker='x', color='r')
+  # plt.text(position[0][0], position[1][0], 'start')
+  # plt.scatter(position[0][-1], position[1][-1], marker='x', color='g')
+  # plt.text(position[0][-1], position[1][-1], 'end')
   
-  plt.plot(ankle_hor[1], ankle_height[1])
 #  plt.scatter(ankle_hor[1][0], ankle_height[1][0], marker='x', color='r')
 #  plt.text(ankle_hor[1][0], ankle_height[1][0], 'start')
 #  plt.scatter(ankle_hor[1][-1], ankle_height[1][-1], marker='x', color='g')
 #  plt.text(ankle_hor[1][-1], ankle_height[1][-1], 'end') 
-  plt.legend(('from python', 'from solidworks'))
-  plt.xlabel("horizontal position (m)")
-  plt.ylabel("vertical position(m)")
+  plt.legend(('Raw Data', 'Computed Trajectory'))
+  plt.xlabel("Horizontal Position (m)")
+  plt.ylabel("Vertical Position (m)")
+  plt.title("Phase Portrait of Centroid Trajectory over the Gait Cycle")
   plt.show()
   
 if __name__ == '__main__':

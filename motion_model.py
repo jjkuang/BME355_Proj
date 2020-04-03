@@ -22,7 +22,7 @@ ta_CE_norm = []
 
 
 class MotionModel:
-  def __init__(self, start=0, end=1, frequency = 50, duty_cycle = 0.7, scaling = 1, non_linearity = -1, shape_="monophasic"):
+  def __init__(self, start=0, end=1, frequency = 50, duty_cycle = 0.4, scaling = 1, non_linearity = -1, shape_="monophasic"):
       self.start = start
       self.end = end
     
@@ -31,8 +31,8 @@ class MotionModel:
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
       self.a.get_activation_signal(self.lit_data.activation_function(), shape=shape_)
       
-      rest_length_soleus = self.soleus_length(23.7*np.pi/180)*1.15
-      rest_length_tibialis = self.tibialis_length(-37.4*np.pi/180)*0.9275 # lower is earlier activation
+      rest_length_soleus = self.soleus_length(23.7*np.pi/180)*1.015
+      rest_length_tibialis = self.tibialis_length(-37.4*np.pi/180)*0.9158 # lower is earlier activation
       print(rest_length_soleus)
       print(rest_length_tibialis)
       soleus_f0m = 650.02
@@ -53,7 +53,8 @@ class MotionModel:
   def set_activation(self, frequency, duty_cycle, scaling, non_linearity, shape_):
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
       self.a.get_activation_signal(self.lit_data.activation_function(), shape=shape_)
-
+      self.a.plot()
+      
   def get_global(self,theta, x, y, t):
       
       ankle_angle = theta + np.pi/2
@@ -159,8 +160,8 @@ class MotionModel:
       ak_tan = ak_tan_mag * np.array([-1*s_alpha/abs(s_alpha) * abs(np.cos(ak_tan_dir)),
                              (s_alpha/abs(s_alpha)) * direction * abs(np.sin(ak_tan_dir))])
 
-      a_acceleration = [k_norm[0] + k_tan[0] + ak_norm[0] + ak_tan[0],
-                        k_norm[1] + k_tan[1] + ak_norm[1] + ak_tan[1]]
+      a_acceleration = [k_norm[0]/4 + k_tan[0]/2 + ak_norm[0]/4 + ak_tan[0]/2,
+                        k_norm[1]/4 + k_tan[1]/2 + ak_norm[1]/4 + ak_tan[1]/2]
 
       # print(t, k_norm[1], k_tan[1], ak_norm[1], ak_tan[1])
 
@@ -305,19 +306,19 @@ class MotionModel:
       com_a_terms = self.solve_com_a_tan(t,x[0])
 
       # derivative of angular velocity is angular acceleration
-      # x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment + ankle_linear_y_moment + \
-      #       normal_com_a_x_moment + normal_com_a_y_moment)/(inertia_ankle + com_a_terms[0] + com_a_terms[1])
-      
-      x_1 = (tau_ta - tau_s + gravity_moment_val)/(inertia_ankle) #- com_a_terms[0] + com_a_terms[1])
+      x_1 = (tau_ta - tau_s + gravity_moment_val + ankle_linear_x_moment + ankle_linear_y_moment + \
+             normal_com_a_x_moment + normal_com_a_y_moment)/(inertia_ankle + com_a_terms[0] + com_a_terms[1])
+
+#      x_1 = (tau_ta - tau_s + gravity_moment_val+ ankle_linear_x_moment + ankle_linear_y_moment)/(inertia_ankle) #- com_a_terms[0] + com_a_terms[1])
   
       
       # derivative of normalized CE lengths is normalized velocity
-      x_2 = get_velocity(activation_s, x[2], norm_soleus_tendon_length)
-      x_3 = get_velocity(activation_ta, x[3], norm_tibialis_tendon_length)
+      x_2 = 100*get_velocity(activation_s, x[2], norm_soleus_tendon_length)
+      x_3 = 100*get_velocity(activation_ta, x[3], norm_tibialis_tendon_length)
   
       # return as a vector
-      deriv.append([x_0, x_1, x_2[0], x_3[0]])
-      return np.array([x_0, x_1, x_2[0], x_3[0]])
+      deriv.append([x_0, x_1[0], x_2[0], x_3[0]])
+      return np.array([x_0, x_1[0], x_2[0], x_3[0]])
 
   def plot_graphs(self):
       time = self.time
@@ -351,93 +352,80 @@ class MotionModel:
           # normal_com_a_y_moment.append(self.com_a_moment_norm_y(t,w,th))
 
       plt.figure()
-      plt.plot(time, soleus_moment, 'r')
-      plt.plot(time, tibialis_moment, 'g')
-      plt.plot(time, grav_mom, 'k')
-      plt.plot(time, ankle_linear_x_moment)
-      plt.plot(time, ankle_linear_y_moment)
+      plt.plot(time*100, soleus_moment, 'r')
+      plt.plot(time*100, tibialis_moment, 'g')
+      plt.plot(time*100, grav_mom, 'k')
+      plt.plot(time*100, ankle_linear_x_moment)
+      plt.plot(time*100, ankle_linear_y_moment)
       # plt.plot(time, normal_com_a_x_moment)
       # plt.plot(time, normal_com_a_y_moment)
-      plt.legend(('soleus', 'tibialis', 'gravity','ankle_linear_x','ankle_linear_y'))
+      plt.legend(('Soleus Moment', 'Tibialis Moment', 'Moment','Ankle Linear Acceleration (x)','Ankle Linear Acceleration (y)'))
       plt.xlabel('Time (s)')
       plt.ylabel('Torques (Nm)')
      # plt.ylabel('Acceleration (m/s^2)')
+      plt.title("Moments over Swing Phase")
       plt.tight_layout()
       plt.show()
       
       #Muscle lengths
       plt.figure()
-      plt.plot(time, soleus_norm_length_muscle)
-      plt.plot(time, tibialis_norm_length_muscle)
-      plt.legend(('norm soleus length', 'norm ta length'))
+      plt.plot(time*100, soleus_norm_length_muscle)
+      plt.plot(time*100, tibialis_norm_length_muscle)
+      plt.legend(('Normalized Soleus length', 'Normalized TA Length'))
+      plt.xlabel("% Gait Cycle")
+      plt.ylabel('Normalized Length')
+      plt.title("Normalized Length of CE over Swing Phase")
       plt.show()
 
       #Angle
       plt.figure()
-      plt.plot(time,theta)
-      plt.plot(time, self.lit_data.ankle_angle(time)*np.pi/180)
-      plt.legend(('sim', 'real'))
+      plt.plot(time*100, self.lit_data.ankle_angle(time)*np.pi/180)
+      plt.plot(time*100,theta, '--')
+      plt.legend(('Real', 'Simulation'))
+      plt.xlabel("% Gait Cycle")
       plt.ylabel('Ankle angle (rad)')
-      plt.xlabel('Time (s)')
+      plt.title("Ankle Angle over the Swing Phase")
       plt.show()
   
-      # Ankle trajectory
-      x = np.arange(self.start,self.end,0.001)
+      # Toe height vs time - Plot toe height over gait cycle (swing phase to end)
+      gnd_hip = 0.92964  # m
+      x = np.arange(self.start,self.end,.01)
       true_position = [[],[]]
       for ite in x:
-          coord = self.get_global(self.lit_data.ankle_angle(ite)[0]*np.pi/180,0.06674,-0.03581,ite)
+          coord = self.get_global(self.lit_data.ankle_angle(ite)[0]*np.pi/180,0.2218,0,ite)
           true_position[0].append(coord[0])
-          true_position[1].append(coord[1])
+          true_position[1].append(gnd_hip + coord[1])
       
       position = [[],[]]
       for i in range(len(time)):
-          coord = self.get_global(theta[i],0.06674,-0.03581,time[i])
+          coord = self.get_global(theta[i],0.2218,0,time[i])
           position[0].append(coord[0])
-          position[1].append(coord[1])
+          position[1].append(gnd_hip + coord[1])
 
       #Plot vertical position over gait cycle
-      plt.figure()
-      plt.plot(time,position[1])
-      plt.plot(x,true_position[1])
-      plt.legend(('sim', 'real'))
+      plt.figure() 
+      plt.plot(x*100,true_position[1])
+      plt.plot(time*100,position[1], '--')
+      plt.legend(('Real', 'Simulation'))
       plt.xlabel("% Gait Cycle")
-      plt.ylabel("vertical position over time (m)")
+      plt.ylabel("Toe Height (m)")
+      plt.title("Toe Height over the Swing Phase")
       plt.show()
 
-      # Plot vertical position of COM to horizontal posn of COM
+      # Plot vertical position of toe to horizontal posn of toe
       plt.figure()
-      plt.plot(position[0], position[1])
-      plt.scatter(position[0][0], position[1][0], marker='x', color='r')
-      plt.text(position[0][0], position[1][0], 'start')
-      plt.scatter(position[0][-1], position[1][-1], marker='x', color='g')
-      plt.text(position[0][-1], position[1][-1], 'end')
       plt.plot(true_position[0], true_position[1])
-      plt.legend(('sim', 'real'))
-      plt.xlabel("horizontal position (m)")
-      plt.ylabel("vertical position(m)")
+      plt.plot(position[0], position[1], '--')
+#      plt.scatter(position[0][0], position[1][0], marker='x', color='r')
+#      plt.text(position[0][0], position[1][0], 'start')
+#      plt.scatter(position[0][-1], position[1][-1], marker='x', color='g')
+#      plt.text(position[0][-1], position[1][-1], 'end')
+      plt.legend(('Real', 'Simulation'))
+      plt.xlabel("Horizontal Position (m)")
+      plt.ylabel("Vertical Position(m)")
+      plt.title("Phase Portrait of Toe Trajectory over the Swing Phase")
       plt.show()
 
-      # Toe height vs time - Plot toe height over gait cycle (swing phase to end)
-      gnd_hip = 0.92964  # m
-      true_toe_position = []
-      for ite in x:
-          coord = self.get_global(self.lit_data.ankle_angle(ite)[0]*np.pi/180,0.2218,0,ite)
-          true_toe_position.append(gnd_hip + coord[1])
-
-      toe_height = []
-      for i in range(len(time)):
-          coord = self.get_global(theta[i],0.2218,0,time[i])
-          toe_hip = -coord[1]
-          toe_height.append(gnd_hip - toe_hip)
-
-      plt.figure()
-      plt.plot(time,toe_height)
-      plt.plot(x,true_toe_position)
-      plt.legend(('sim', 'real'))
-      plt.xlabel("% Gait Cycle")
-      plt.ylabel("toe height (m)")
-      plt.show()
-      
 
   def rk4_update(self,f,t,time_step,x):
     s_1 = f(t, x)
@@ -446,13 +434,14 @@ class MotionModel:
     s_4 = f(t + time_step, x + time_step*s_3)
     return x + time_step/6*(s_1+2*s_2+2*s_3+s_4)
 
+
   def simulate(self, mode = "rk45"):
     global solution
     def f(t, x):
         return self.dynamics(x, self.soleus, self.tibialis, t)
 
     if mode == "rk45":
-      sol = solve_ivp(f, [self.start, self.end], self.initial_state, rtol=1e-5, atol=1e-8)
+      sol = solve_ivp(f, [self.start, self.end], self.initial_state, max_step = 0.01, rtol=1e-5, atol=1e-8)
       solution = sol
       self.time = sol.t
       self.x1 = sol.y[0,:]
@@ -460,7 +449,7 @@ class MotionModel:
       self.x3 = sol.y[2,:]
       self.x4 = sol.y[3,:]
     elif mode == "rk4":
-        time_steps = [0.001]
+        time_steps = [0.01]
         for i in range(0):
           time_steps.append(time_steps[i]/2)
 
@@ -477,12 +466,12 @@ class MotionModel:
           self.x2 = sol[:][1]
           self.x3 = sol[:][2]
           self.x4 = sol[:][3]
-
-    self.plot_graphs()
+          
           
   def compare_ankle_angle(self):
     target = self.lit_data.ankle_angle(self.time)*np.pi/180
     return np.sqrt(np.mean((target-self.x1)**2))
+  
   
   def compare_toe_height(self):
     gnd_hip = 0.92964 - (-0.009488720645956072)  # m 
@@ -496,14 +485,14 @@ class MotionModel:
         targ_coord = self.get_global(self.lit_data.ankle_angle(self.time[i])[0]*np.pi/180,0.2218,0,self.time[i])
         target_toe_position.append(gnd_hip + targ_coord[1])
         
-    below_zero = False 
+    above_zero = True 
     predicted_toe_position = np.array(predicted_toe_position)
     find_below = np.argwhere(predicted_toe_position < 0)
     if np.size(find_below) > 0:
-      below_zero = True
+      above_zero = False
     
     rmse = np.sqrt(np.mean((target_toe_position-predicted_toe_position)**2))
-    return [below_zero, rmse]
+    return [above_zero, rmse]
 
 
 if __name__ == '__main__':
@@ -511,7 +500,7 @@ if __name__ == '__main__':
     motion_model.simulate(mode="rk45")
     print(motion_model.compare_ankle_angle())
     print(motion_model.compare_toe_height())
-    
+    motion_model.plot_graphs()
     
     
     

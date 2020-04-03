@@ -39,7 +39,7 @@ class Activation:
       pulse = np.concatenate((on, off))
       
       pulse_train = pulse
-      for _ in range(self.frequency):
+      for _ in range(self.frequency+1):
         pulse_train = np.concatenate((pulse_train, pulse))
       
       x = np.linspace(0, 100, len(pulse_train))
@@ -98,10 +98,25 @@ if __name__ == '__main__':
   emg_data = load_data('./data/ta_vs_gait.csv')
   emg_data = np.array(emg_data)
   emg_data_regress = get_norm_emg(emg_data)
-  
-  frequency, duty_cycle, scaling, non_linearity = 40, 0.5, 1.0, -1
+
+  # Plot actual EMG data
+  emg_data = np.transpose(emg_data)
+  plt.plot(emg_data[0], emg_data[1])
+  plt.xlabel("% Gait Cycle")
+  plt.ylabel("Normalized Activation")
+  plt.title("Raw Activation data from EMG and Regression Model Over % Gait Cycle")
+  x = np.arange(0,100,1)
+  plt.plot(x, emg_data_regress.eval(x), "--")
+  plt.legend(('Raw Data', 'Regression Model'))
+  plt.show()
+
+  # Plot Generated FES Signal
+  frequency, duty_cycle, scaling, non_linearity = 35, 0.5, 1.0, -1
   a = Activation(frequency, duty_cycle, scaling, non_linearity)
-  a.get_activation_signal(emg_data_regress, shape="halfsin")
+  a.get_activation_signal(emg_data_regress, shape="monophasic")
+  plt.xlabel("% Gait Cycle")
+  plt.ylabel("Normalized Activation")
+  plt.title("Generated FES Activation Signal Over % Gait Cycle")
   a.plot()
   
 #  dutys = np.arange(0,1,0.05)
