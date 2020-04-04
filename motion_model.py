@@ -30,12 +30,15 @@ class MotionModel:
             
       self.a = Activation(frequency, duty_cycle, scaling, non_linearity)
       self.a.get_activation_signal(self.lit_data.activation_function(), shape=shape_)
-      
+
+      self.a_sol = Activation(frequency, duty_cycle, scaling, non_linearity)
+      self.a_sol.get_activation_signal(self.lit_data.activation_function_soleus(), shape=shape_)
+     
       rest_length_soleus = self.soleus_length(23.7*np.pi/180)*1.015
       rest_length_tibialis = self.tibialis_length(-37.4*np.pi/180)*0.9158 # lower is earlier activation
       print(rest_length_soleus)
       print(rest_length_tibialis)
-      soleus_f0m = 1950.06
+      soleus_f0m = 2600.06
       self.soleus = HillTypeMuscle(soleus_f0m, .1342*rest_length_soleus, .8658*rest_length_soleus)
       self.tibialis = HillTypeMuscle(605.3465, .2206*rest_length_tibialis, .7794*rest_length_tibialis)
 
@@ -275,7 +278,7 @@ class MotionModel:
       tibialis_moment_arm = .03  
   
       # static activations
-      activation_s = 0
+      activation_s = 0#self.a_sol.get_amp(t) if t >=0.68 else 0
       activation_ta = self.a.get_amp(t)
       act.append(activation_ta)
   
@@ -426,6 +429,8 @@ class MotionModel:
       plt.ylabel("Vertical Position(m)")
       plt.title("Phase Portrait of Toe Trajectory over the Swing Phase")
       plt.show()
+      
+      print(min(position[1]))
 
   def plot_toe_height(self):
       time = self.time
@@ -520,18 +525,19 @@ if __name__ == '__main__':
     motion_model = MotionModel( start=0.58, end=1, frequency = 50, duty_cycle = 0.4, scaling = 1, non_linearity = -1, shape_="monophasic")
     motion_model.simulate(mode="rk45")
     print(motion_model.compare_toe_height())
+    motion_model.plot_graphs()
     
-    motion_model_2 = MotionModel(start=0.58, end=1, frequency =2, duty_cycle = 0, scaling = 1, non_linearity = -1, shape_="monophasic")
-    motion_model_2.simulate(mode="rk45")
-    print(motion_model_2.compare_toe_height())
-    
-    plt.figure()
-    motion_model.plot_toe_height()
-    motion_model_2.plot_toe_height()
-    plt.xlabel("% Gait Cycle")
-    plt.ylabel("Toe Height (m)")
-    plt.legend(('With Activation', 'Without Activation'))
-    plt.title("Toe Height over the Swing Phase")
+#    motion_model_2 = MotionModel(start=0.58, end=1, frequency =2, duty_cycle = 0, scaling = 1, non_linearity = -1, shape_="monophasic")
+#    motion_model_2.simulate(mode="rk45")
+#    print(motion_model_2.compare_toe_height())
+#    
+#    plt.figure()
+#    motion_model.plot_toe_height()
+#    motion_model_2.plot_toe_height()
+#    plt.xlabel("% Gait Cycle")
+#    plt.ylabel("Toe Height (m)")
+#    plt.legend(('With Activation', 'Without Activation'))
+#    plt.title("Toe Height over the Swing Phase")
     
     
     

@@ -140,26 +140,30 @@ if __name__ == '__main__':
   plt.title("Generated FES Activation Signal Over % Gait Cycle")
   a2.plot()
   print(a2.get_fatigue())
-#  dutys = np.arange(0,1,0.05)
-#  freqs = np.arange(20,50,1)
-#  fatigue = []
-#  
-#  for i in range(len(freqs)):   
-#    temp_fat = []
-#    for j in range(len(dutys)):
-#      temp = Activation(length, freqs[i], dutys[j], scaling, non_linearity)
-#      temp.get_activation_signal(emg_data_regress)
-#      temp_fat.append(temp.get_fatigue())
-#    fatigue.append(temp_fat)
-#  
-#  fatigue = np.array(fatigue)
-#  freqs = np.tile(freqs,(len(dutys),1))
-#  freqs = np.transpose(freqs)
-#  dutys = np.tile(dutys,(len(freqs),1))
-#  
-#  from mpl_toolkits.mplot3d import Axes3D 
-#  fig = plt.figure()
-#  ax = fig.gca(projection='3d')
-#  ax.scatter(freqs,dutys,fatigue)
-#  plt.show()
+  
+  freqs = np.arange(20,55,5)
+  dutys = np.arange(0,1,0.1)
+  fatigue = []
+  
+  for i in range(len(freqs)):   
+    temp_fat = []
+    for j in range(len(dutys)):
+      temp = Activation(freqs[i], dutys[j], scaling, non_linearity)
+      temp.get_activation_signal(emg_data_regress)
+      temp_fat.append(temp.get_fatigue())
+    fatigue.append(temp_fat)
+  
+  fatigue = np.array(fatigue)
+  freqs = np.tile(freqs,(len(dutys),1))
+  freqs = np.transpose(freqs)
+  dutys = np.tile(dutys,(len(freqs),1))
+  
+  from mpl_toolkits.mplot3d import Axes3D 
+  fig = plt.figure()
+  ax = fig.gca(projection='3d')
+  ax.scatter(dutys,freqs,fatigue)
+  ax.set_xlabel('Duty Cycle')
+  ax.set_ylabel('Frequency (Hz)')
+  ax.set_zlabel('Fatigue')
+  plt.show()
 

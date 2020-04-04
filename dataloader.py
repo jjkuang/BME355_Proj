@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from regression import load_data, get_norm_emg, get_regress_general, \
-get_regress_hip, get_regress_ankle
+get_regress_hip, get_regress_ankle, get_norm_sol
 
 class DataLoader:
   # Get activation signal a
@@ -10,6 +10,10 @@ class DataLoader:
     emg_data = load_data('./data/ta_vs_gait.csv')
     emg_data = np.array(emg_data)
     self.emg_function = get_norm_emg(emg_data)
+    
+    emg_sol_data = load_data('./data/soleus_vs_gait.csv')
+    emg_sol_data = np.array(emg_sol_data)
+    self.emg_sol_function = get_norm_sol(emg_sol_data)
     
     # Get ankle angle
     ankle_data = load_data('./data/ankle_vs_gait.csv')
@@ -40,9 +44,15 @@ class DataLoader:
     
   def activation_function(self):
     return self.emg_function
+
+  def activation_function_soleus(self):
+    return self.emg_sol_function
   
   def activation(self, x):
     return self.emg_function.eval(x* 100)
+  
+  def activation_soleus(self, x):
+    return self.emg_sol_function.eval(x* 100)
   
   def ankle_angle(self, x):
     return self.ankle_function.eval(x * 100)
@@ -87,9 +97,16 @@ if __name__ == '__main__':
   
   plt.figure()
   plt.plot(x, published_data.activation(x))
-  plt.title("Normalized EMG")
+  plt.title("Normalized TA EMG")
   plt.grid(True)
   plt.show()
+  
+  plt.figure()
+  plt.plot(x, published_data.activation_soleus(x))
+  plt.title("Normalized Soleus EMG")
+  plt.grid(True)
+  plt.show()
+  
   
   plt.figure()
   plt.plot(x, published_data.ankle_angle(x))

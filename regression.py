@@ -106,6 +106,16 @@ def get_norm_emg(data):
 	return result
 
 
+def get_norm_sol(data):
+	percent_gait = data[:,0]
+	intensity = data[:,1]
+
+	centres = np.arange(-10, 110, 4)
+	width = 3
+	result = Regression(percent_gait, intensity, centres, width, .2, sigmoids=False)
+	return result
+
+
 def get_regress_ankle(data):
 	percent_gait = data[:,0]
 	ankle_angle = data[:,1]
